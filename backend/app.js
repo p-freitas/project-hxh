@@ -21,6 +21,7 @@ const io = require("socket.io")(server, {
   },
   // transports: ['websocket']
 });
+const cardsHelper = require("./helpers/cardsHelper");
 
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -67,6 +68,15 @@ function generateRoomId() {
   }
 }
 
+const handleCards = (cardCode, array, userId) => {
+  const handler = cardsHelper[cardCode];
+  if (handler) {
+    return handler(array, userId);
+  } else {
+    throw new Error("Código inválido.");
+  }
+};
+
 // Socket.io connection handling
 io.on("connection", (socket) => {
   console.log(`A user connected with id: ${socket.id}`);
@@ -80,14 +90,18 @@ io.on("connection", (socket) => {
 
   socket.on("matchMaking", () => {
     if (roomsAvaiable.length === 0) {
-      console.log("matchMaking 1", socket.id);
       const gameId = generateRoomId();
       roomsAvaiable.push({ gameId: gameId, socketsWating: socket.id });
       socket.emit("createNewGame");
     } else {
-      console.log("matchMaking 2", socket.id);
       socket.emit("joinExistingGame", roomsAvaiable[0].gameId);
     }
+  });
+
+  socket.on("cancelMatchMaking", () => {
+    roomsAvaiable = roomsAvaiable.filter(
+      (item) => item.socketsWating !== socket.id
+    );
   });
 
   socket.on("createGame", (gameId, userId) => {
@@ -97,11 +111,10 @@ io.on("connection", (socket) => {
     });
     socket.emit("gameCreated", gameId);
     io.to(roomsAvaiable[0].socketsWating).emit("gameCreated", gameId);
-    // roomsAvaiable = [];
+    roomsAvaiable = roomsAvaiable.filter((item) => item.gameId !== gameId);
   });
 
   socket.on("joinGame", (gameId, userId) => {
-    console.log('roomsAvaiable::', roomsAvaiable[0]);
     socket.join(gameId);
     const room = rooms.get(gameId);
     const playerExists = room.players.some((player) => player.id === userId);
@@ -123,7 +136,6 @@ io.on("connection", (socket) => {
     const indexToEdit = room.players.findIndex(
       (obj) => obj.id === objectIdToFind
     );
-    socket.emit("ready2");
 
     if (indexToEdit !== -1) {
       room.players[indexToEdit].isReady = isReady;
@@ -131,7 +143,6 @@ io.on("connection", (socket) => {
 
       const allTrueValues = room.players.every((obj) => obj.isReady === true);
       if (allTrueValues) {
-        console.log("readyyyy", io.to(gameId));
         io.to(gameId).emit("ready");
       }
     } else {
@@ -176,11 +187,23 @@ io.on("connection", (socket) => {
 
     // Calculate sum of dices for each player
     const sums = room.players.map((player) => ({
-      name: player.name,
+      id: player.id,
       score: player.dices.reduce((total, dice) => total + dice, 0),
     }));
 
     io.to(gameId).emit("setRoundResult", sums);
+  });
+
+  socket.on("useCard", (gameId, userId, card) => {
+    const room = rooms.get(gameId);
+    const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
+    const player2Index = indexToEdit === 0 ? 1 : 0;
+
+    console.log("room.players::", room.players);
+    const result = handleCards(card, room.players, userId);
+    room.players = result.array;
+    console.log("result:::", result);
+    io.to(gameId).emit("cardResult", result);
   });
 });
 

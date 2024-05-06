@@ -34,7 +34,59 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
+}
+
+.card {
+  cursor: pointer;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  grid-gap: 20px;
+  justify-content: center;
+  align-content: center;
+  position: relative;
+}
+
+.cell {
+  background: #fff;
+  border-radius: 8px;
+  height: 200px;
+  width: 200px;
+  color: #333;
+  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.draggable {
+  background: #ccc;
+  height: 180px;
+  width: 180px;
+  border-radius: 8px;
+  position: absolute;
+  cursor: grab;
+  z-index: 1;
+  transition: background 0.3s ease;
+}
+
+.draggable:hover {
+  background: #ddd;
+}
+
+.target {
+  background-color: black;
+  width: 500px;
+  height: 500px;
+  position: absolute;
 }

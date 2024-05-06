@@ -1,5 +1,5 @@
 // App.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "animate.css";
 import "./styles.css";
@@ -7,10 +7,27 @@ import "./styles.css";
 const Lobby = ({ socket }: any) => {
   const navigate = useNavigate();
   const userId = sessionStorage.getItem("userId");
+  const [watingPlayersMessagem, setWatingPlayersMessagem] =
+    useState<boolean>(false);
+  const [playButtonDisabled, setPlayButtonDisabled] = useState<boolean>(false);
 
-  const handleNewGame = async () => {
+  const handleNewGame = () => {
+    setWatingPlayersMessagem(true);
+    setPlayButtonDisabled(true);
     try {
-      socket.emit("matchMaking");
+      setTimeout(() => {
+        socket.emit("matchMaking");
+      }, 1000);
+    } catch (error) {
+      console.error("Error playing round:", error);
+    }
+  };
+
+  const cancelMatchMaking = () => {
+    try {
+      socket.emit("cancelMatchMaking");
+      setWatingPlayersMessagem(false);
+      setPlayButtonDisabled(false);
     } catch (error) {
       console.error("Error playing round:", error);
     }
@@ -18,7 +35,7 @@ const Lobby = ({ socket }: any) => {
 
   useEffect(() => {
     socket.on("createNewGame", () => {
-      console.log("Aguardando jogador...");
+      setWatingPlayersMessagem(true);
     });
   }, [socket]);
 
@@ -38,8 +55,6 @@ const Lobby = ({ socket }: any) => {
 
   useEffect(() => {
     socket.on("gameCreated", (gameId: string) => {
-      console.log("gameCreated::");
-
       socket.emit("joinGame", gameId, userId);
     });
 
@@ -50,6 +65,7 @@ const Lobby = ({ socket }: any) => {
 
   useEffect(() => {
     socket.on("joinedGame", (gameId: string) => {
+      setWatingPlayersMessagem(false);
       navigate(`/battle/${gameId}`);
     });
 
@@ -58,7 +74,19 @@ const Lobby = ({ socket }: any) => {
     };
   }, [navigate, socket]);
 
-  return <button onClick={handleNewGame}>Play</button>;
+  return (
+    <>
+      <button onClick={handleNewGame} disabled={playButtonDisabled}>
+        Play
+      </button>
+      {watingPlayersMessagem && (
+        <>
+          <p>Aguardando jogadores...</p>
+          <button onClick={cancelMatchMaking}>Cancelar</button>
+        </>
+      )}
+    </>
+  );
 };
 
 export default Lobby;
