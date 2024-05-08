@@ -1,14 +1,19 @@
-// App.tsx
 import React, { useState, useEffect, useRef } from "react";
 import ReactDice, { ReactDiceRef } from "react-dice-complete";
 import { useLocation } from "react-router-dom";
 import "animate.css";
 import "./styles.css";
-import { motion, PanInfo } from "framer-motion";
+import { motion } from "framer-motion";
+import CardsModal from "../../components/CardsModal";
 
 type RoundResult = {
   id: string;
   score: number;
+};
+
+type CardSelectedType = {
+  code: string;
+  index: number;
 };
 
 const Battle = ({ socket }: any) => {
@@ -37,10 +42,75 @@ const Battle = ({ socket }: any) => {
   const [disableButton, setDisableButton] = useState<boolean>(false);
   const [playerAgainMessagem, setPlayerAgainMessagem] =
     useState<boolean>(false);
-  const [dragStart, setDragStart] = useState<number>();
   const [hideCard, setHideCard] = useState<string>("hide");
+  const [hideCardPlayer2, setHideCardPlayer2] = useState<string>("hide");
   const [hideUsingCard, setHideUsingCard] = useState<string>("show-card");
-  const [isOpenBottomDiv, setIsOpenBottomDiv] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [cardSelected, setCardSelected] = useState<CardSelectedType>();
+  const [cardSelectedSent, setCardSelectedSent] = useState<
+    CardSelectedType | undefined
+  >();
+  const [oponentSelectedCard, setOponentSelectedCard] = useState<string>();
+  const [cardOutAnimation, setCardOutAnimation] = useState<boolean>();
+
+  const playerCards = [
+    {
+      code: "01",
+      quantity: 1,
+    },
+    {
+      code: "02",
+      quantity: 2,
+    },
+    {
+      code: "01",
+      quantity: 1,
+    },
+    {
+      code: "02",
+      quantity: 2,
+    },
+    {
+      code: "01",
+      quantity: 1,
+    },
+    {
+      code: "02",
+      quantity: 2,
+    },
+    {
+      code: "01",
+      quantity: 1,
+    },
+    {
+      code: "02",
+      quantity: 2,
+    },
+    {
+      code: "01",
+      quantity: 1,
+    },
+    {
+      code: "02",
+      quantity: 2,
+    },
+    {
+      code: "01",
+      quantity: 1,
+    },
+    {
+      code: "02",
+      quantity: 2,
+    },
+    {
+      code: "01",
+      quantity: 1,
+    },
+    {
+      code: "02",
+      quantity: 2,
+    },
+  ];
 
   useEffect(() => {
     setGameId(location.pathname.split("/")[2]);
@@ -104,7 +174,6 @@ const Battle = ({ socket }: any) => {
 
   useEffect(() => {
     socket.on("cardResult", (data: any) => {
-      console.log("data::", data);
       if (data.dicesChanged.status === true) {
         const index = data.array.findIndex(
           (obj: { id: string | null }) => obj.id === userId
@@ -129,6 +198,19 @@ const Battle = ({ socket }: any) => {
       socket.off("cardResult");
     };
   }, [gameId, socket, userId]);
+
+  useEffect(() => {
+    socket.on("oponentCard", (card: string) => {
+      console.log("card::", card);
+
+      setHideCardPlayer2("show");
+      setOponentSelectedCard(card);
+    });
+
+    return () => {
+      socket.off("oponentCard");
+    };
+  }, [socket]);
 
   const handlePlayRound = () => {
     setPlayerRoundButtonPressed(true);
@@ -170,27 +252,23 @@ const Battle = ({ socket }: any) => {
     reactDicePlayer2.current?.rollAll(player2Dices);
   };
 
-  const handleOnDragEnd = (info: PanInfo) => {
-    // @ts-ignore
-    if (dragStart - info.point.y >= 300) {
-      setIsOpenBottomDiv(false);
-      setHideUsingCard("hide-card");
-      setHideCard("show");
-      socket.emit("useCard", gameId, userId, "01");
-      // document.querySelector("body").style.background = "black";
-    }
-    // @ts-ignore
-    document.querySelector("body").style.background =
-      "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const handlePlayCard = () => {
+    socket.emit("useCard", gameId, userId, cardSelected?.code);
+    setCardSelectedSent(cardSelected);
+    setHideCard("show");
+    setCardOutAnimation(true);
+    setTimeout(() => {
+      handleCloseModal();
+      setCardSelected(undefined);
+    }, 300);
   };
 
   return (
-    <div
-      className="battle-container"
-      style={{
-        transform: isOpenBottomDiv ? "translateY(-40vh)" : "translateY(0)",
-      }}
-    >
+    <div className="battle-container">
       <div className="player2-container">
         <div
           className={`animate__animated playersDices player2-dices ${animationClassPlayer2} ${isDicesVisisbleClassPlayer2}`}
@@ -214,11 +292,13 @@ const Battle = ({ socket }: any) => {
         {roundResults && (
           <div className="results-inner-container">
             <div className="results-card">
-              <img
-                src={require("../../assets/images/king_of_hearts.png")}
-                alt="carta"
-                className={`animate__animated animate__tada ${hideCard}`}
-              />
+              {oponentSelectedCard !== undefined && (
+                <img
+                  src={require(`../../assets/images/${oponentSelectedCard}.png`)}
+                  alt="carta"
+                  className={`animate__animated animate__backInDown ${hideCardPlayer2}`}
+                />
+              )}
             </div>
             <div className="results-score-container">
               <h1>{roundPlayer2Result}</h1>
@@ -226,11 +306,13 @@ const Battle = ({ socket }: any) => {
               <h1>{roundPlayer1Result}</h1>
             </div>
             <div className="results-card">
-              <img
-                src={require("../../assets/images/king_of_hearts.png")}
-                alt="carta"
-                className={`animate__animated animate__tada ${hideCard}`}
-              />
+              {cardSelectedSent?.code !== undefined && (
+                <img
+                  src={require(`../../assets/images/${cardSelectedSent?.code}.png`)}
+                  alt="carta"
+                  className={`animate__animated animate__backInUp ${hideCard}`}
+                />
+              )}
             </div>
           </div>
         )}
@@ -277,60 +359,54 @@ const Battle = ({ socket }: any) => {
           </button>
         </div>
         <button
-          onClick={() => setIsOpenBottomDiv(!isOpenBottomDiv)}
+          onClick={() => setIsModalOpen(true)}
           // disabled={disableButton}
           // className="battle-dices-input-buttons"
         >
-          Cartas de feitiço
+          Cartas de batalha
         </button>
       </div>
-      <div
-        className="bottom-div"
-        style={{
-          position: "fixed",
-          bottom: "-40vh",
-          left: 0,
-          width: "100%",
-          height: isOpenBottomDiv ? "40vh" : "0",
-          backgroundColor: "black",
-          transform: `translateY(${isOpenBottomDiv ? "0" : "100%"})`,
-          transition: "height 0.3s ease, transform 0.3s ease",
-          overflow: "visible",
-          display: isOpenBottomDiv ? "flex" : "none",
-          justifyContent: "center",
-          flexDirection: "row",
-        }}
-      >
-        <motion.img
-          drag
-          dragSnapToOrigin
-          whileDrag={{ scale: 1 }}
-          // dragConstraints={{ top: 5 }}
-          onDrag={(event, info) => {
-            // @ts-ignore
-            if (dragStart - info.point.y >= 300) {
-              // @ts-ignore
-              document.querySelector("body").style.background =
-                "linear-gradient(180deg, #9c1aff6b 0%, rgb(119, 0, 255) 100%)";
-            } else {
-              // @ts-ignore
-              document.querySelector("body").style.background =
-                "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
-            }
-          }}
-          onDragStart={(event, info) => {
-            setDragStart(info.point.y);
-          }}
-          onDragEnd={(event, info) => {
-            handleOnDragEnd(info);
-          }}
-          className={`card ${hideUsingCard}`}
-          src={require("../../assets/images/king_of_hearts.png")}
-          alt="carta"
-          whileHover={{ scale: 1.5 }}
-          whileTap={{ scale: 1 }}
-        />
-      </div>
+      <CardsModal isOpen={isModalOpen} onClose={handleCloseModal}>
+        <div className="cards-container">
+          {playerCards?.map((card, index) => (
+            <div
+              className="player-card-container"
+              style={{
+                borderColor:
+                  index === cardSelected?.index ? "greenyellow" : "black",
+              }}
+              key={index}
+              onClick={() => {
+                console.log("cardSelected::", cardSelected);
+                if (cardSelected?.index !== index) {
+                  return setCardSelected({ code: card.code, index: index });
+                }
+                return setCardSelected(undefined);
+              }}
+            >
+              <motion.img
+                drag
+                dragSnapToOrigin
+                dragTransition={{ bounceStiffness: 300, bounceDamping: 20 }}
+                whileDrag={{ scale: 1 }}
+                className={`card ${hideUsingCard} animate__bounceIn ${
+                  cardOutAnimation && cardSelected?.index === index
+                    ? "animate__fadeOutUp"
+                    : ""
+                }`}
+                src={require(`../../assets/images/${card.code}.png`)}
+                alt="carta"
+                whileHover={{ scale: 1.5 }}
+                whileTap={{ scale: 1 }}
+                id={card.code}
+              />
+            </div>
+          ))}
+        </div>
+        <div>
+          <button onClick={handlePlayCard}>Jogar carta</button>
+        </div>
+      </CardsModal>
     </div>
   );
 };

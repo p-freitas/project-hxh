@@ -195,14 +195,15 @@ io.on("connection", (socket) => {
   });
 
   socket.on("useCard", (gameId, userId, card) => {
+    console.log("card:::::::", card);
     const room = rooms.get(gameId);
     const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
     const player2Index = indexToEdit === 0 ? 1 : 0;
 
-    console.log("room.players::", room.players);
     const result = handleCards(card, room.players, userId);
     room.players = result.array;
     console.log("result:::", result);
+    socket.to(gameId).emit("oponentCard", card);
     io.to(gameId).emit("cardResult", result);
   });
 });

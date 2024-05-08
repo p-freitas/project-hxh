@@ -1,0 +1,53 @@
+.modal {
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+}
+
+.modal.open {
+    display: block;
+}
+
+.modal-content {
+    background-color: #7902ff3d;
+    margin: 0 auto;
+    padding: 20px;
+    border: 3px solid black;
+    width: 80%;
+    /* height: 40%; */
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-top: 50px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    right: 12%;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+}
+
+.animate__animated.animate__bounceInUp {
+    --animate-duration: 0.5s;
+}
+
+.closing {
+    animation: ease-out 0.3s;
+}

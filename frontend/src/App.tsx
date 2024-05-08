@@ -14,7 +14,7 @@ const socket = io("http://192.168.1.2:8080", {
 });
 function App() {
   return (
-    <div className="App" id="outer-container" style={{ overflow: "hidden" }}>
+    <div className="App" id="outer-container">
       <BrowserRouter>
         <Routes>
           <Route path="/" />
