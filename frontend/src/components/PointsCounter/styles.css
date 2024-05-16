@@ -1,0 +1,43 @@
+.points-counter-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.points-counter.winner {
+    background-color: lightgreen !important;
+}
+
+.points-counter.loser {
+    background-color: red !important;
+}
+
+.points-counter.draw {
+    background-color: yellow !important;
+}
+
+.points-counter.current {
+    background-color: darkgray;
+    animation: blinkBackground 1s infinite;
+}
+
+@keyframes blinkBackground {
+    0% {
+        background-color: darkgray;
+    }
+
+    50% {
+        background-color: transparent;
+    }
+
+    80% {
+        background-color: darkgray;
+    }
+}
+
+.points-counter {
+    width: 15px;
+    height: 15px;
+    display: block;
+    border: 1px solid;
+    border-radius: 10px;
+}
