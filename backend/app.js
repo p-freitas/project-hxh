@@ -108,6 +108,7 @@ io.on("connection", (socket) => {
     rooms.set(gameId, {
       id: gameId,
       players: [{ id: userId, isReady: false, dices: [] }],
+      round: 1,
     });
     socket.emit("gameCreated", gameId);
     io.to(roomsAvaiable[0].socketsWating).emit("gameCreated", gameId);
@@ -126,10 +127,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("playerIsReady", (gameId, userId, isReady) => {
-    // console.log("---------------------------------");
-    // socket.join(gameId);
     const room = rooms.get(gameId);
-    console.log("playerIsReady userId::", userId);
     // room.players.push(socket.id);
 
     const objectIdToFind = userId;
@@ -139,7 +137,6 @@ io.on("connection", (socket) => {
 
     if (indexToEdit !== -1) {
       room.players[indexToEdit].isReady = isReady;
-      console.log("Array after editing:", room);
 
       const allTrueValues = room.players.every((obj) => obj.isReady === true);
       if (allTrueValues) {
@@ -159,8 +156,13 @@ io.on("connection", (socket) => {
 
     if (indexToEdit !== -1) {
       room.players[indexToEdit].dices = dices;
-      console.log("Array after editing dices:", room);
-      io.to(gameId).emit("player1Rolled", gameId);
+
+      if (
+        room.players[0].dices.length > 0 &&
+        room.players[1].dices.length > 0
+      ) {
+        io.to(gameId).emit("playersRolled", gameId);
+      }
     } else {
       console.log("Object not found in array.");
     }
@@ -175,7 +177,6 @@ io.on("connection", (socket) => {
     const player2Index = indexToEdit === 0 ? 1 : 0;
 
     if (indexToEdit !== -1) {
-      console.log("Array after editing dices:", room);
       socket.emit("rollPlayer2Dices", room.players[player2Index].dices, gameId);
     } else {
       console.log("Object not found in array.");
@@ -191,20 +192,38 @@ io.on("connection", (socket) => {
       score: player.dices.reduce((total, dice) => total + dice, 0),
     }));
 
-    io.to(gameId).emit("setRoundResult", sums);
+    socket.emit("setRoundResult", sums, room.round);
   });
 
   socket.on("useCard", (gameId, userId, card) => {
-    console.log("card:::::::", card);
     const room = rooms.get(gameId);
     const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
     const player2Index = indexToEdit === 0 ? 1 : 0;
 
     const result = handleCards(card, room.players, userId);
     room.players = result.array;
-    console.log("result:::", result);
     socket.to(gameId).emit("oponentCard", card);
     io.to(gameId).emit("cardResult", result);
+  });
+
+  socket.on("nextRound", (gameId, userId) => {
+    const room = rooms.get(gameId);
+    const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
+    room.players[indexToEdit].isReady = false;
+    room.players[indexToEdit].dices = [];
+
+    if (
+      room.players[0].isReady === false &&
+      room.players[1].isReady === false
+    ) {
+      room.round = room.round + 1;
+      io.to(gameId).emit("resetRound", room.round);
+    }
+  });
+
+  socket.on("getRoundNumber", (gameId) => {
+    const room = rooms.get(gameId);
+    io.to(gameId).emit("setRoundNumber", room.round);
   });
 });
 
