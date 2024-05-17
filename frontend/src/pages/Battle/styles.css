@@ -78,7 +78,7 @@
 
 .show-card {
     display: block;
-    height: fit-content;
+    height: 250px;
     margin: 5px;
 }
 
@@ -133,4 +133,32 @@
 
 .cards-modal-button-container {
     margin-top: 20px;
+}
+
+.scale-on-hover {
+    transition: transform 0.3s ease;
+    animation-duration: var(--animate-duration);
+}
+
+.scale-on-hover:hover {
+    transform: scale(1.5);
+}
+
+.card {
+    cursor: pointer;
+}
+
+.card:after {
+    display: flex;
+    width: 25px;
+    height: 25px;
+    background-color: red;
+    position: relative;
+    top: -260px;
+    left: 150px;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
 }

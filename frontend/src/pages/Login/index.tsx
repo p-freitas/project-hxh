@@ -19,8 +19,9 @@ const Login = () => {
       });
       console.log("Server response:", response.data);
       if (response.status === 200) {
-        sessionStorage.setItem('userId', response.data.userId)
-        navigate("/lobby");
+        sessionStorage.setItem("userId", response.data.userId);
+        sessionStorage.setItem("token", response.data.accessToken);
+        navigate("/");
       }
     } catch (error) {
       console.error("Error sending request:", error);

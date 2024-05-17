@@ -6,6 +6,7 @@ import "./styles.css";
 import { motion } from "framer-motion";
 import CardsModal from "../../components/CardsModal";
 import PointsCounter from "../../components/PointsCounter";
+import { useAxios } from "../../context/AxiosContext";
 
 type RoundResult = {
   id: string;
@@ -13,7 +14,8 @@ type RoundResult = {
 };
 
 type CardSelectedType = {
-  code: string;
+  cardCode: string;
+  quantity?: string;
   index: number;
 };
 
@@ -25,7 +27,9 @@ type Accumulator = {
 
 const Battle = ({ socket }: any) => {
   const location = useLocation();
+  const axios = useAxios();
   const userId = sessionStorage.getItem("userId");
+  const token = sessionStorage.getItem("token");
   const reactDicePlayer1 = useRef<ReactDiceRef>(null);
   const reactDicePlayer2 = useRef<ReactDiceRef>(null);
 
@@ -69,69 +73,46 @@ const Battle = ({ socket }: any) => {
   const [point4Color, setPoint4Color] = useState<string>();
   const [point5Color, setPoint5Color] = useState<string>();
   const [diceKey, setDiceKey] = useState<number>(0);
+  const [playerCards, setPlayerCard] = useState<CardSelectedType[]>();
 
-  const playerCards = [
-    {
-      code: "01",
-      quantity: 1,
-    },
-    {
-      code: "02",
-      quantity: 2,
-    },
-    {
-      code: "01",
-      quantity: 1,
-    },
-    {
-      code: "02",
-      quantity: 2,
-    },
-    {
-      code: "01",
-      quantity: 1,
-    },
-    {
-      code: "02",
-      quantity: 2,
-    },
-    {
-      code: "01",
-      quantity: 1,
-    },
-    {
-      code: "02",
-      quantity: 2,
-    },
-    {
-      code: "01",
-      quantity: 1,
-    },
-    {
-      code: "02",
-      quantity: 2,
-    },
-    {
-      code: "01",
-      quantity: 1,
-    },
-    {
-      code: "02",
-      quantity: 2,
-    },
-    {
-      code: "01",
-      quantity: 1,
-    },
-    {
-      code: "02",
-      quantity: 2,
-    },
-  ];
+  const getPlayerCards = async () => {
+    try {
+      const response = await axios.get(
+        "http://192.168.1.2:8080/users/getUserCards",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("Server response:", response.data);
+      if (response.status === 200) {
+        setPlayerCard(response.data.cards);
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
+  };
+
+  useEffect(() => {
+    getPlayerCards();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setGameId(location.pathname.split("/")[2]);
   }, [location.pathname]);
+
+  useEffect(() => {
+    socket.on("updatedCards", (cards: any) => {
+      setPlayerCard(cards);
+      console.log("cards::", cards);
+    });
+
+    return () => {
+      socket.off("updatedCards");
+    };
+  }, [socket]);
 
   useEffect(() => {
     socket.on("ready", () => {
@@ -355,7 +336,7 @@ const Battle = ({ socket }: any) => {
   };
 
   const handlePlayCard = () => {
-    socket.emit("useCard", gameId, userId, cardSelected?.code);
+    socket.emit("useCard", gameId, userId, cardSelected?.cardCode);
     setCardSelectedSent(cardSelected);
     setHideCard("show");
     setCardOutAnimation(true);
@@ -365,7 +346,7 @@ const Battle = ({ socket }: any) => {
     }, 300);
   };
 
-  console.log("diceKey::", diceKey);
+  console.log("playerCards::", playerCards);
 
   return (
     <div className="battle-container">
@@ -410,7 +391,7 @@ const Battle = ({ socket }: any) => {
                 <img
                   src={require(`../../assets/images/${oponentSelectedCard}.png`)}
                   alt="carta"
-                  className={`animate__animated animate__backInDown ${hideCardPlayer2}`}
+                  className={`scale-on-hover animate__backInDown ${hideCardPlayer2}`}
                 />
               )}
             </div>
@@ -420,11 +401,11 @@ const Battle = ({ socket }: any) => {
               <h1>{roundPlayer1Result}</h1>
             </div>
             <div className="results-card">
-              {cardSelectedSent?.code !== undefined && (
+              {cardSelectedSent?.cardCode !== undefined && (
                 <img
-                  src={require(`../../assets/images/${cardSelectedSent?.code}.png`)}
+                  src={require(`../../assets/images/${cardSelectedSent?.cardCode}.png`)}
                   alt="carta"
-                  className={`animate__animated animate__backInUp ${hideCard}`}
+                  className={`animate__backInUp scale-on-hover ${hideCard}`}
                 />
               )}
             </div>
@@ -486,42 +467,67 @@ const Battle = ({ socket }: any) => {
       </div>
       <CardsModal isOpen={isModalOpen} onClose={handleCloseModal}>
         <div className="cards-container">
-          {playerCards?.map((card, index) => (
-            <div
-              className="player-card-container"
-              style={{
-                borderColor:
-                  index === cardSelected?.index ? "greenyellow" : "black",
-              }}
-              key={index}
-              onClick={() => {
-                if (cardSelected?.index !== index) {
-                  return setCardSelected({ code: card.code, index: index });
-                }
-                return setCardSelected(undefined);
-              }}
-            >
-              <motion.img
-                drag
-                dragSnapToOrigin
-                dragTransition={{ bounceStiffness: 300, bounceDamping: 20 }}
-                whileDrag={{ scale: 1 }}
-                className={`card ${hideUsingCard} animate__bounceIn ${
-                  cardOutAnimation && cardSelected?.index === index
-                    ? "animate__fadeOutUp"
-                    : ""
-                }`}
-                src={require(`../../assets/images/${card.code}.png`)}
-                alt="carta"
-                whileHover={{ scale: 1.5 }}
-                whileTap={{ scale: 1 }}
-                id={card.code}
-              />
-            </div>
-          ))}
+          {playerCards?.length === 0 ? (
+            <h1>Sem cartas</h1>
+          ) : (
+            playerCards?.map((card, index) => (
+              <>
+                <style>
+                  {`
+                  .card:after {
+                    content: '${card.quantity}';
+                    
+                  }
+                `}
+                </style>
+                <div
+                  className="player-card-container"
+                  style={{
+                    borderColor:
+                      index === cardSelected?.index ? "greenyellow" : "black",
+                  }}
+                  key={index}
+                  onClick={() => {
+                    if (cardSelected?.index !== index) {
+                      return setCardSelected({
+                        cardCode: card.cardCode,
+                        index: index,
+                      });
+                    }
+                    return setCardSelected(undefined);
+                  }}
+                >
+                  <motion.div
+                    className={`card ${hideUsingCard} animate__bounceIn ${
+                      cardOutAnimation && cardSelected?.index === index
+                        ? "animate__fadeOutUp"
+                        : ""
+                    }`}
+                    whileHover={{ scale: 1.5 }}
+                    whileTap={{ scale: 1 }}
+                    id={card.cardCode}
+                  >
+                    <motion.img
+                      src={require(`../../assets/images/${card.cardCode}.png`)}
+                      alt="carta"
+                      drag
+                      dragSnapToOrigin
+                      dragTransition={{
+                        bounceStiffness: 300,
+                        bounceDamping: 20,
+                      }}
+                      whileDrag={{ scale: 1 }}
+                    />
+                  </motion.div>
+                </div>
+              </>
+            ))
+          )}
         </div>
         <div className="cards-modal-button-container">
-          <button onClick={handlePlayCard}>Jogar carta</button>
+          <button onClick={handlePlayCard} disabled={playerCards?.length === 0}>
+            Jogar carta
+          </button>
         </div>
       </CardsModal>
     </div>
