@@ -2,6 +2,7 @@ const Joi = require("joi");
 require("dotenv").config();
 const { v4: uuid } = require("uuid");
 const { customAlphabet: generate } = require("nanoid");
+const jwt = require("jsonwebtoken");
 
 const { generateJwt } = require("./helpers/generateJwt");
 const { sendEmail } = require("./helpers/mailer");
@@ -354,5 +355,45 @@ exports.Logout = async (req, res) => {
       error: true,
       message: error.message,
     });
+  }
+};
+
+exports.GetUserCards = async (req, res) => {
+  const token = req.headers.authorization.split(" ")[1];
+
+  try {
+    const decodedToken = jwt.decode(token, { complete: true });
+    const userId = decodedToken.payload.id;
+
+    if (!userId) {
+      return res.status(400).json({
+        error: true,
+        message: "UserId not found.",
+      });
+    }
+
+    //1. Find if any account with that userId exists in DB
+    const user = await User.findOne({ userId: userId });
+
+    // NOT FOUND - Throw error
+    if (!user) {
+      return res.status(404).json({
+        error: true,
+        message: "User not found",
+      });
+    }
+
+    //Success
+    return res.send({
+      success: true,
+      userId: user.userId,
+      cards: user.cards,
+    });
+  } catch (err) {
+    // console.error("GetUserCards error", err);
+    // return res.status(500).json({
+    //   error: true,
+    //   message: "Couldn't get user cards. Please try again later.",
+    // });
   }
 };

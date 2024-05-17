@@ -7,14 +7,14 @@ async function validateToken(req, res, next) {
   const authorizationHeader = req.headers.authorization;
   let result;
   if (!authorizationHeader)
-    return res.status(401).json({
+    return res.status(400).json({
       error: true,
       message: "Access token is missing",
     });
 
   const token = req.headers.authorization.split(" ")[1]; // Bearer <token>
   const options = {
-    expiresIn: "1h",
+    expiresIn: "24h",
   };
   try {
     let user = await User.findOne({
@@ -57,7 +57,7 @@ async function validateToken(req, res, next) {
         message: `Authentication error`,
       };
     }
-    return res.status(403).json(result);
+    return res.status(401).json(result);
   }
 }
 

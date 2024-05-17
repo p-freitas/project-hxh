@@ -20,4 +20,6 @@ router.get("/referred", validateToken, AuthController.ReferredAccounts);
 
 router.get("/logout", validateToken, AuthController.Logout);
 
+router.get("/getUserCards", validateToken, AuthController.GetUserCards);
+
 module.exports = router;

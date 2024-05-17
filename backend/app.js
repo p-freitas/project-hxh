@@ -6,6 +6,7 @@ const socketIo = require("socket.io");
 const crypto = require("crypto");
 const cors = require("cors");
 const app = express();
+const User = require("./src/users/user.model");
 
 app.use(cors());
 require("dotenv").config();
@@ -13,15 +14,15 @@ require("dotenv").config();
 const PORT = process.env.PORT || 8080;
 const authRoutes = require("./routes/users");
 const server = http.createServer(app);
+const cardsHelper = require("./helpers/cardsHelper");
+
 const io = require("socket.io")(server, {
   cors: {
     origin: "*",
     methods: ["PUT", "GET", "POST", "DELETE", "OPTIONS"],
     credentials: false,
   },
-  // transports: ['websocket']
 });
-const cardsHelper = require("./helpers/cardsHelper");
 
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -50,7 +51,6 @@ app.use("/users", authRoutes);
 
 const rooms = new Map();
 let roomsAvaiable = [];
-let players = {};
 
 function generateRoomId() {
   try {
@@ -128,7 +128,6 @@ io.on("connection", (socket) => {
 
   socket.on("playerIsReady", (gameId, userId, isReady) => {
     const room = rooms.get(gameId);
-    // room.players.push(socket.id);
 
     const objectIdToFind = userId;
     const indexToEdit = room.players.findIndex(
@@ -195,15 +194,43 @@ io.on("connection", (socket) => {
     socket.emit("setRoundResult", sums, room.round);
   });
 
-  socket.on("useCard", (gameId, userId, card) => {
+  socket.on("useCard", async (gameId, userId, card) => {
     const room = rooms.get(gameId);
-    const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
-    const player2Index = indexToEdit === 0 ? 1 : 0;
+
+    // Find the user
+    const user = await User.findOne({ userId });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    console.log("user.cards::", user.cards);
+
+    // Find the card within the user's cards
+    const cardIndex = user.cards.findIndex((c) => c.cardCode === card);
+
+    if (cardIndex === -1) {
+      throw new Error("Card not found");
+    }
+
+    // Decrease the card quantity
+    user.cards[cardIndex].quantity -= 1;
+
+    // Remove the card if the quantity is zero
+    if (user.cards[cardIndex].quantity <= 0) {
+      user.cards.splice(cardIndex, 1);
+    }
+
+    // Save the updated user document
+    await user.save();
 
     const result = handleCards(card, room.players, userId);
     room.players = result.array;
     socket.to(gameId).emit("oponentCard", card);
     io.to(gameId).emit("cardResult", result);
+
+    // Emit the updated card array to the user
+    socket.emit("updatedCards", user.cards);
   });
 
   socket.on("nextRound", (gameId, userId) => {
