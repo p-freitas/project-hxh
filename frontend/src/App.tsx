@@ -9,7 +9,7 @@ import io from "socket.io-client";
 import Teste from "./pages/Teste";
 import { AxiosProvider } from "./context/AxiosContext";
 
-const socket = io("http://192.168.1.2:8080", {
+const socket = io(`${process.env.REACT_APP_API_BASE_URL}`, {
   transports: ["websocket"],
   reconnection: true,
 });

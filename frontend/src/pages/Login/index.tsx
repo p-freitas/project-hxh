@@ -13,10 +13,13 @@ const Login = () => {
     event.preventDefault();
 
     try {
-      const response = await axios.post("http://192.168.1.2:8080/users/login", {
-        userName: userName,
-        password: password,
-      });
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/users/login`,
+        {
+          userName: userName,
+          password: password,
+        }
+      );
       console.log("Server response:", response.data);
       if (response.status === 200) {
         sessionStorage.setItem("userId", response.data.userId);

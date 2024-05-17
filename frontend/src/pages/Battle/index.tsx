@@ -78,7 +78,7 @@ const Battle = ({ socket }: any) => {
   const getPlayerCards = async () => {
     try {
       const response = await axios.get(
-        "http://192.168.1.2:8080/users/getUserCards",
+        `${process.env.REACT_APP_API_BASE_URL}/users/getUserCards`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -471,7 +471,7 @@ const Battle = ({ socket }: any) => {
             <h1>Sem cartas</h1>
           ) : (
             playerCards?.map((card, index) => (
-              <>
+              <div key={index}>
                 <style>
                   {`
                   .card:after {
@@ -486,7 +486,6 @@ const Battle = ({ socket }: any) => {
                     borderColor:
                       index === cardSelected?.index ? "greenyellow" : "black",
                   }}
-                  key={index}
                   onClick={() => {
                     if (cardSelected?.index !== index) {
                       return setCardSelected({
@@ -520,7 +519,7 @@ const Battle = ({ socket }: any) => {
                     />
                   </motion.div>
                 </div>
-              </>
+              </div>
             ))
           )}
         </div>
