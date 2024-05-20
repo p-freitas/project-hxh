@@ -85,8 +85,6 @@ const Battle = ({ socket }: any) => {
   const [playerCards, setPlayerCard] = useState<CardSelectedType[]>();
   const [battleFinished, setBattleFinished] = useState<boolean>(false);
   const [battleResult, setBattleResult] = useState<BattleResultType>();
-  const [stealOpponentCardModal, setStealOpponentCardModal] =
-    useState<boolean>(false);
   const [opponentCards, setOpponentCards] = useState<CardSelectedType[]>();
   const [modalType, setModalType] = useState<string>();
 
@@ -398,6 +396,7 @@ const Battle = ({ socket }: any) => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setCardSelected(undefined);
   };
 
   const handlePlayCard = () => {
@@ -444,7 +443,6 @@ const Battle = ({ socket }: any) => {
 
       if (response.status === 200) {
         setOpponentCards(response.data.cards);
-        setStealOpponentCardModal(true);
         handleOpenModal("opponentCards");
       }
     } catch (error) {
@@ -728,6 +726,8 @@ const Battle = ({ socket }: any) => {
                           ? "animate__fadeOutUp"
                           : ""
                       }`}
+                      whileHover={{ scale: 1.5 }}
+                      whileTap={{ scale: 1 }}
                       id={card.cardCode}
                     >
                       <motion.img
@@ -750,10 +750,11 @@ const Battle = ({ socket }: any) => {
         )}
 
         <div className="cards-modal-button-container">
-          {!stealOpponentCardModal ? (
+          {modalType === "myCards" ? (
             <button
               onClick={handlePlayCard}
-              disabled={opponentCards?.length === 0}
+              // @ts-ignore
+              disabled={opponentCards?.length === 0 || battleResult}
             >
               Jogar carta
             </button>
