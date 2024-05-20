@@ -16,7 +16,7 @@ const CardsModal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
     setTimeout(() => {
       onClose();
       setIsClosing(false);
-    }, 1000);
+    }, 500);
   };
 
   useEffect(() => {
@@ -29,7 +29,7 @@ const CardsModal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
         setTimeout(() => {
           onClose();
           setIsClosing(false);
-        }, 1000);
+        }, 500);
       }
     };
     document.addEventListener("mousedown", handleOutsideClick);

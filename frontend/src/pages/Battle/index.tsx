@@ -7,10 +7,16 @@ import { motion } from "framer-motion";
 import CardsModal from "../../components/CardsModal";
 import PointsCounter from "../../components/PointsCounter";
 import { useAxios } from "../../context/AxiosContext";
+import CardContainer from "./styles";
 
 type RoundResult = {
   id: string;
   score: number;
+};
+
+type RoundResultWinner = {
+  draw: boolean;
+  winner: string;
 };
 
 type CardSelectedType = {
@@ -19,10 +25,10 @@ type CardSelectedType = {
   index: number;
 };
 
-type Accumulator = {
-  highestScorer: RoundResult | null;
-  highestScore: number;
+type BattleResultType = {
   draw: boolean;
+  winner: string | undefined;
+  loser: string | undefined;
 };
 
 const Battle = ({ socket }: any) => {
@@ -36,6 +42,9 @@ const Battle = ({ socket }: any) => {
   const [numDice, setNumDice] = useState<number>(1);
   const [numDiceComponent, setNumDiceComponent] = useState<number>(1);
   const [roundResults, setRoundResults] = useState<RoundResult[]>();
+  const [roundResultsWinner, setRoundResultsWinner] = useState<
+    RoundResultWinner[]
+  >([]);
   const [roundNumber, setRoundNumber] = useState<number>(1);
   const [roundPlayer1Result, setRoundPlayer1Result] = useState<number>();
   const [roundPlayer2Result, setRoundPlayer2Result] = useState<number>();
@@ -74,6 +83,12 @@ const Battle = ({ socket }: any) => {
   const [point5Color, setPoint5Color] = useState<string>();
   const [diceKey, setDiceKey] = useState<number>(0);
   const [playerCards, setPlayerCard] = useState<CardSelectedType[]>();
+  const [battleFinished, setBattleFinished] = useState<boolean>(false);
+  const [battleResult, setBattleResult] = useState<BattleResultType>();
+  const [stealOpponentCardModal, setStealOpponentCardModal] =
+    useState<boolean>(false);
+  const [opponentCards, setOpponentCards] = useState<CardSelectedType[]>();
+  const [modalType, setModalType] = useState<string>();
 
   const getPlayerCards = async () => {
     try {
@@ -85,7 +100,7 @@ const Battle = ({ socket }: any) => {
           },
         }
       );
-      console.log("Server response:", response.data);
+
       if (response.status === 200) {
         setPlayerCard(response.data.cards);
       }
@@ -106,7 +121,6 @@ const Battle = ({ socket }: any) => {
   useEffect(() => {
     socket.on("updatedCards", (cards: any) => {
       setPlayerCard(cards);
-      console.log("cards::", cards);
     });
 
     return () => {
@@ -157,58 +171,93 @@ const Battle = ({ socket }: any) => {
             ? setRoundPlayer1Result(item.score)
             : setRoundPlayer2Result(item.score);
         });
-        const highestScorer = data.reduce<Accumulator>(
+        const result = data.reduce<any>(
           (acc, obj) => {
-            if (obj.score > acc.highestScore) {
-              return {
-                highestScorer: obj,
-                highestScore: obj.score,
-                draw: false,
-              };
-            } else if (obj.score === acc.highestScore) {
+            if (!acc.highestScorer) {
+              return { highestScorer: obj, draw: false };
+            }
+
+            const accScore = acc.highestScorer.score;
+            const objScore = obj.score;
+
+            // Check if both scores are the same
+            if (accScore === objScore) {
               return { ...acc, draw: true };
-            } else {
+            }
+
+            // Rule 1: Both scores less than 21
+            if (accScore < 21 && objScore < 21) {
+              const accDiff = 21 - accScore;
+              const objDiff = 21 - objScore;
+              if (objDiff < accDiff) {
+                return { highestScorer: obj, draw: false };
+              }
+            }
+            // Rule 2: One score more than 21, the other less than 21
+            else if (accScore > 21 && objScore <= 21) {
+              return { highestScorer: obj, draw: false };
+            } else if (accScore <= 21 && objScore > 21) {
               return acc;
             }
+            // Rule 3: Both scores more than 21
+            else if (accScore > 21 && objScore > 21) {
+              const accDiff = accScore - 21;
+              const objDiff = objScore - 21;
+              if (objDiff < accDiff) {
+                return { highestScorer: obj, draw: false };
+              }
+            }
+
+            return acc;
           },
-          { highestScorer: null, highestScore: -Infinity, draw: false }
+          { highestScorer: null, draw: false }
         );
+
+        if (result) {
+          const newObj = {
+            draw: result.draw,
+            winner: result.highestScorer.id,
+          };
+          setRoundResultsWinner([...roundResultsWinner, newObj]);
+        }
 
         switch (round) {
           case 1:
-            highestScorer.draw
+            result.draw
               ? setPoint1Color("draw")
-              : highestScorer?.highestScorer?.id === userId
+              : result?.highestScorer?.id === userId
               ? setPoint1Color("winner")
               : setPoint1Color("loser");
             break;
           case 2:
-            highestScorer.draw
+            result.draw
               ? setPoint2Color("draw")
-              : highestScorer?.highestScorer?.id === userId
+              : result?.highestScorer?.id === userId
               ? setPoint2Color("winner")
               : setPoint2Color("loser");
             break;
           case 3:
-            highestScorer.draw
+            result.draw
               ? setPoint3Color("draw")
-              : highestScorer?.highestScorer?.id === userId
+              : result?.highestScorer?.id === userId
               ? setPoint3Color("winner")
               : setPoint3Color("loser");
             break;
           case 4:
-            highestScorer.draw
+            result.draw
               ? setPoint4Color("draw")
-              : highestScorer?.highestScorer?.id === userId
+              : result?.highestScorer?.id === userId
               ? setPoint4Color("winner")
               : setPoint4Color("loser");
             break;
           case 5:
-            highestScorer.draw
+            result.draw
               ? setPoint5Color("draw")
-              : highestScorer?.highestScorer?.id === userId
+              : result?.highestScorer?.id === userId
               ? setPoint5Color("winner")
               : setPoint5Color("loser");
+
+            setBattleFinished(true);
             break;
 
           default:
@@ -225,7 +274,7 @@ const Battle = ({ socket }: any) => {
     return () => {
       socket.off("setRoundResult");
     };
-  }, [socket, userId]);
+  }, [gameId, roundResultsWinner, socket, userId]);
 
   useEffect(() => {
     socket.on("cardResult", (data: any) => {
@@ -262,6 +311,16 @@ const Battle = ({ socket }: any) => {
   }, [socket]);
 
   useEffect(() => {
+    socket.on("setBattleWinner", (result: BattleResultType) => {
+      setBattleResult(result);
+    });
+
+    return () => {
+      socket.off("setBattleWinner");
+    };
+  }, [socket]);
+
+  useEffect(() => {
     socket.on("resetRound", (round: number) => {
       setRoundNumber(round);
       setRoundResults([]);
@@ -285,6 +344,12 @@ const Battle = ({ socket }: any) => {
   }, [diceKey, socket]);
 
   const handlePlayRound = () => {
+    if (battleFinished) {
+      socket.emit("getBattleWinner", gameId, roundResultsWinner);
+      setWatingPlayersMessagem(true);
+      return;
+    }
+
     if (playerAgainMessagem) {
       socket.emit("nextRound", gameId, userId);
       setWatingPlayersMessagem(true);
@@ -346,7 +411,51 @@ const Battle = ({ socket }: any) => {
     }, 300);
   };
 
-  console.log("playerCards::", playerCards);
+  const handleStealPlayCardButton = () => {
+    socket.emit(
+      "stealPlayerCard",
+      gameId,
+      userId,
+      battleResult?.loser,
+      cardSelected?.cardCode
+    );
+    // setCardSelectedSent(cardSelected);
+    // setHideCard("show");
+    // setCardOutAnimation(true);
+    setTimeout(() => {
+      handleCloseModal();
+      setCardSelected(undefined);
+    }, 300);
+  };
+
+  const handleStealPlayerCard = async () => {
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/cards/getOpponentCards`,
+        {
+          userId: battleResult?.loser,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setOpponentCards(response.data.cards);
+        setStealOpponentCardModal(true);
+        handleOpenModal("opponentCards");
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
+  };
+
+  const handleOpenModal = (type: string) => {
+    setModalType(type);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="battle-container">
@@ -363,170 +472,299 @@ const Battle = ({ socket }: any) => {
           ]}
         />
       </div>
-      <div className="player2-container">
-        <div
-          className={`animate__animated playersDices player2-dices ${animationClassPlayer2} ${isDicesVisisbleClassPlayer2}`}
-          key={diceKey}
-        >
-          <ReactDice
-            rollTime={2}
-            defaultRoll={1}
-            numDice={player2DiceNumber}
-            ref={reactDicePlayer2}
-            disableIndividual
-            faceColor="#ffffff"
-            dotColor="#000000"
-            dieCornerRadius={10}
-            outline
-            rollDone={rollDonePlayer2}
-          />
-        </div>
-      </div>
-
-      <div className="results-container">
-        {roundResults && roundResults?.length > 0 && (
-          <div className="results-inner-container">
-            <div className="results-card">
-              {oponentSelectedCard !== undefined && (
-                <img
-                  src={require(`../../assets/images/${oponentSelectedCard}.png`)}
-                  alt="carta"
-                  className={`scale-on-hover animate__backInDown ${hideCardPlayer2}`}
-                />
-              )}
-            </div>
-            <div className="results-score-container">
-              <h1>{roundPlayer2Result}</h1>
-              <h2>X</h2>
-              <h1>{roundPlayer1Result}</h1>
-            </div>
-            <div className="results-card">
-              {cardSelectedSent?.cardCode !== undefined && (
-                <img
-                  src={require(`../../assets/images/${cardSelectedSent?.cardCode}.png`)}
-                  alt="carta"
-                  className={`animate__backInUp scale-on-hover ${hideCard}`}
-                />
-              )}
+      {!battleResult ? (
+        <>
+          <div className="player2-container">
+            <div
+              className={`animate__animated playersDices player2-dices ${animationClassPlayer2} ${isDicesVisisbleClassPlayer2}`}
+              key={diceKey}
+            >
+              <ReactDice
+                rollTime={2}
+                defaultRoll={1}
+                numDice={player2DiceNumber}
+                ref={reactDicePlayer2}
+                disableIndividual
+                faceColor="#ffffff"
+                dotColor="#000000"
+                dieCornerRadius={10}
+                outline
+                rollDone={rollDonePlayer2}
+              />
             </div>
           </div>
-        )}
-      </div>
 
-      <div className="player-container">
-        <div
-          className={`animate__animated playersDices player1-dices ${animationClassPlayer1} ${isDicesVisisbleClassPlayer1}`}
-          key={diceKey}
-        >
-          <ReactDice
-            rollTime={2}
-            defaultRoll={1}
-            numDice={numDiceComponent}
-            ref={reactDicePlayer1}
-            disableIndividual
-            faceColor="#ffffff"
-            dotColor="#000000"
-            dieCornerRadius={10}
-            outline
-            rollDone={rollDonePlayer1}
-          />
-        </div>
-        <div className="battle-dices-inputs player1">
-          <button
-            onClick={() => numDice !== 1 && setNumDice(numDice - 1)}
-            disabled={disableButton}
-            className="battle-dices-input-buttons"
-          >
-            -
-          </button>
-          <button
-            onClick={handlePlayRound}
-            disabled={disablePlayButton || watingPlayersMessagem}
-          >
-            {watingPlayersMessagem
-              ? "Aguardando o outro jogador..."
-              : playerAgainMessagem
-              ? "Próximo round"
-              : `Jogar ${numDice} dados`}
-          </button>
-          <button
-            onClick={() => numDice !== 10 && setNumDice(numDice + 1)}
-            disabled={disableButton}
-            className="battle-dices-input-buttons"
-          >
-            +
-          </button>
-        </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          // disabled={disableButton}
-          // className="battle-dices-input-buttons"
-        >
-          Cartas de batalha
-        </button>
-      </div>
-      <CardsModal isOpen={isModalOpen} onClose={handleCloseModal}>
-        <div className="cards-container">
-          {playerCards?.length === 0 ? (
-            <h1>Sem cartas</h1>
-          ) : (
-            playerCards?.map((card, index) => (
-              <div key={index}>
-                <style>
-                  {`
-                  .card:after {
-                    content: '${card.quantity}';
-                    
-                  }
-                `}
-                </style>
-                <div
-                  className="player-card-container"
-                  style={{
-                    borderColor:
-                      index === cardSelected?.index ? "greenyellow" : "black",
-                  }}
-                  onClick={() => {
-                    if (cardSelected?.index !== index) {
-                      return setCardSelected({
-                        cardCode: card.cardCode,
-                        index: index,
-                      });
-                    }
-                    return setCardSelected(undefined);
-                  }}
-                >
-                  <motion.div
-                    className={`card ${hideUsingCard} animate__bounceIn ${
-                      cardOutAnimation && cardSelected?.index === index
-                        ? "animate__fadeOutUp"
-                        : ""
-                    }`}
-                    whileHover={{ scale: 1.5 }}
-                    whileTap={{ scale: 1 }}
-                    id={card.cardCode}
-                  >
-                    <motion.img
-                      src={require(`../../assets/images/${card.cardCode}.png`)}
+          <div className="results-container">
+            {roundResults && roundResults?.length > 0 && (
+              <div className="results-inner-container">
+                <div className="results-card">
+                  {oponentSelectedCard !== undefined && (
+                    <img
+                      src={require(`../../assets/images/${oponentSelectedCard}.png`)}
                       alt="carta"
-                      drag
-                      dragSnapToOrigin
-                      dragTransition={{
-                        bounceStiffness: 300,
-                        bounceDamping: 20,
-                      }}
-                      whileDrag={{ scale: 1 }}
+                      className={`scale-on-hover animate__backInDown ${hideCardPlayer2}`}
                     />
-                  </motion.div>
+                  )}
+                </div>
+                <div className="results-score-container">
+                  <h1>{roundPlayer2Result}</h1>
+                  <h2>X</h2>
+                  <h1>{roundPlayer1Result}</h1>
+                </div>
+                <div className="results-card">
+                  {cardSelectedSent?.cardCode !== undefined && (
+                    <img
+                      src={require(`../../assets/images/${cardSelectedSent?.cardCode}.png`)}
+                      alt="carta"
+                      className={`animate__backInUp scale-on-hover ${hideCard}`}
+                    />
+                  )}
                 </div>
               </div>
-            ))
+            )}
+          </div>
+
+          <div className="player-container">
+            <div
+              className={`animate__animated playersDices player1-dices ${animationClassPlayer1} ${isDicesVisisbleClassPlayer1}`}
+              key={diceKey}
+            >
+              <ReactDice
+                rollTime={2}
+                defaultRoll={1}
+                numDice={numDiceComponent}
+                ref={reactDicePlayer1}
+                disableIndividual
+                faceColor="#ffffff"
+                dotColor="#000000"
+                dieCornerRadius={10}
+                outline
+                rollDone={rollDonePlayer1}
+              />
+            </div>
+            <div className="battle-dices-inputs player1">
+              <button
+                onClick={() => numDice !== 1 && setNumDice(numDice - 1)}
+                disabled={disableButton}
+                className="battle-dices-input-buttons"
+              >
+                -
+              </button>
+              <button
+                onClick={handlePlayRound}
+                disabled={disablePlayButton || watingPlayersMessagem}
+              >
+                {watingPlayersMessagem
+                  ? "Aguardando o outro jogador..."
+                  : battleFinished
+                  ? "Ver o resultado da batalha"
+                  : playerAgainMessagem
+                  ? "Próximo round"
+                  : `Jogar ${numDice} dados`}
+              </button>
+              <button
+                onClick={() => numDice !== 10 && setNumDice(numDice + 1)}
+                disabled={disableButton}
+                className="battle-dices-input-buttons"
+              >
+                +
+              </button>
+            </div>
+            <button
+              onClick={() => handleOpenModal("myCards")}
+              // disabled={disableButton}
+              // className="battle-dices-input-buttons"
+            >
+              Cartas de batalha
+            </button>
+          </div>
+        </>
+      ) : (
+        <div>
+          <div>
+            <h1>Resultado da batalha:</h1>
+          </div>
+          {battleResult.draw ? (
+            <div>
+              <h1>Empate!</h1>
+              <div>
+                <button
+                // onClick={() => setIsModalOpen(true)}
+                // disabled={disableButton}
+                // className="battle-dices-input-buttons"
+                >
+                  Sair da batalha
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div>
+                <h1>
+                  {battleResult.winner === userId
+                    ? "Você ganhou!"
+                    : "Você perdeu :("}
+                </h1>
+              </div>
+              <div>
+                {battleResult.winner === userId ? (
+                  <>
+                    <button
+                      onClick={handleStealPlayerCard}
+                      // disabled={disableButton}
+                      // className="battle-dices-input-buttons"
+                    >
+                      Roubar carta do oponente
+                    </button>
+                    <button
+                    // onClick={() => setIsModalOpen(true)}
+                    // disabled={disableButton}
+                    // className="battle-dices-input-buttons"
+                    >
+                      Abrir dois pacotes
+                    </button>
+                    <button
+                      onClick={() => handleOpenModal("myCards")}
+                      // disabled={disableButton}
+                      // className="battle-dices-input-buttons"
+                    >
+                      Minhas cartas
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                    // onClick={() => setIsModalOpen(true)}
+                    // disabled={disableButton}
+                    // className="battle-dices-input-buttons"
+                    >
+                      Sair da batalha
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
           )}
         </div>
+      )}
+
+      <CardsModal isOpen={isModalOpen} onClose={handleCloseModal}>
+        {modalType === "myCards" ? (
+          <div className="cards-container">
+            {playerCards?.length === 0 ? (
+              <h1>Sem cartas</h1>
+            ) : (
+              playerCards?.map((card, index) => (
+                <CardContainer content={card.quantity} key={index}>
+                  <div
+                    className="player-card-container"
+                    style={{
+                      borderColor:
+                        index === cardSelected?.index ? "greenyellow" : "black",
+                    }}
+                    onClick={() => {
+                      if (cardSelected?.index !== index) {
+                        return setCardSelected({
+                          cardCode: card.cardCode,
+                          index: index,
+                        });
+                      }
+                      return setCardSelected(undefined);
+                    }}
+                  >
+                    <motion.div
+                      className={`card ${hideUsingCard} animate__bounceIn ${
+                        cardOutAnimation && cardSelected?.index === index
+                          ? "animate__fadeOutUp"
+                          : ""
+                      }`}
+                      whileHover={{ scale: 1.5 }}
+                      whileTap={{ scale: 1 }}
+                      id={card.cardCode}
+                    >
+                      <motion.img
+                        src={require(`../../assets/images/${card.cardCode}.png`)}
+                        alt="carta"
+                        drag
+                        dragSnapToOrigin
+                        dragTransition={{
+                          bounceStiffness: 300,
+                          bounceDamping: 20,
+                        }}
+                        whileDrag={{ scale: 1 }}
+                      />
+                    </motion.div>
+                  </div>
+                </CardContainer>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="cards-container">
+            {opponentCards?.length === 0 ? (
+              <h1>O oponente não tem cartas</h1>
+            ) : (
+              opponentCards?.map((card, index) => (
+                <CardContainer content={card.quantity} key={index}>
+                  <div
+                    className="player-card-container"
+                    style={{
+                      borderColor:
+                        index === cardSelected?.index ? "greenyellow" : "black",
+                    }}
+                    onClick={() => {
+                      if (cardSelected?.index !== index) {
+                        return setCardSelected({
+                          cardCode: card.cardCode,
+                          index: index,
+                        });
+                      }
+                      return setCardSelected(undefined);
+                    }}
+                  >
+                    <motion.div
+                      className={`card ${hideUsingCard} animate__bounceIn ${
+                        cardOutAnimation && cardSelected?.index === index
+                          ? "animate__fadeOutUp"
+                          : ""
+                      }`}
+                      id={card.cardCode}
+                    >
+                      <motion.img
+                        src={require(`../../assets/images/${card.cardCode}.png`)}
+                        alt="carta"
+                        drag
+                        dragSnapToOrigin
+                        dragTransition={{
+                          bounceStiffness: 300,
+                          bounceDamping: 20,
+                        }}
+                        whileDrag={{ scale: 1 }}
+                      />
+                    </motion.div>
+                  </div>
+                </CardContainer>
+              ))
+            )}
+          </div>
+        )}
+
         <div className="cards-modal-button-container">
-          <button onClick={handlePlayCard} disabled={playerCards?.length === 0}>
-            Jogar carta
-          </button>
+          {!stealOpponentCardModal ? (
+            <button
+              onClick={handlePlayCard}
+              disabled={opponentCards?.length === 0}
+            >
+              Jogar carta
+            </button>
+          ) : (
+            <button
+              onClick={handleStealPlayCardButton}
+              disabled={opponentCards?.length === 0}
+            >
+              Roubar carta
+            </button>
+          )}
         </div>
       </CardsModal>
     </div>

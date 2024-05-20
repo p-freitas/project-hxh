@@ -10,18 +10,17 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response && error.response.status === 401) {
-      await logoutUser();
+      logoutUser();
       window.location.href = "/login"; // Redirect to the login page
     }
     return Promise.reject(error);
   }
 );
 
-const logoutUser = async () => {
+const logoutUser = () => {
   try {
     sessionStorage.removeItem("userId");
     sessionStorage.removeItem("token");
-    await axiosInstance.get("/users/logout");
   } catch (error) {
     console.error("Logout failed", error);
   }

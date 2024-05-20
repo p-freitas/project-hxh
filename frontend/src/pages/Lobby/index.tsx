@@ -3,13 +3,32 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "animate.css";
 import "./styles.css";
+import { useAxios } from "../../context/AxiosContext";
 
 const Lobby = ({ socket }: any) => {
   const navigate = useNavigate();
+  const axios = useAxios();
+
+  const token = sessionStorage.getItem("token");
   const userId = sessionStorage.getItem("userId");
   const [watingPlayersMessagem, setWatingPlayersMessagem] =
     useState<boolean>(false);
   const [playButtonDisabled, setPlayButtonDisabled] = useState<boolean>(false);
+
+  const validateToken = async () => {
+    try {
+      await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/users/validateToken`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
+  };
 
   const handleNewGame = () => {
     setWatingPlayersMessagem(true);
@@ -32,6 +51,11 @@ const Lobby = ({ socket }: any) => {
       console.error("Error playing round:", error);
     }
   };
+
+  useEffect(() => {
+    validateToken();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     socket.on("createNewGame", () => {
