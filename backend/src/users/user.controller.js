@@ -340,6 +340,7 @@ exports.ReferredAccounts = async (req, res) => {
 
 exports.Logout = async (req, res) => {
   try {
+    console.log("req.decoded::", req.decoded);
     const { id } = req.decoded;
 
     let user = await User.findOne({ userId: id });
@@ -390,10 +391,16 @@ exports.GetUserCards = async (req, res) => {
       cards: user.cards,
     });
   } catch (err) {
-    // console.error("GetUserCards error", err);
-    // return res.status(500).json({
-    //   error: true,
-    //   message: "Couldn't get user cards. Please try again later.",
-    // });
+    console.error("GetUserCards error", err);
+    return res.status(500).json({
+      error: true,
+      message: "Couldn't get user cards. Please try again later.",
+    });
   }
+};
+
+exports.ValidateToken = async (req, res) => {
+  return res.status(200).json({
+    error: false,
+  });
 };

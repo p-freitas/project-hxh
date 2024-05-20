@@ -26,7 +26,7 @@ async function validateToken(req, res, next) {
         error: true,
         message: `Authorization error`,
       };
-      return res.status(403).json(result);
+      return res.status(401).json(result);
     }
 
     result = jwt.verify(token, process.env.JWT_SECRET, options);

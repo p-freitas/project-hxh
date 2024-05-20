@@ -11,8 +11,8 @@ const User = require("./src/users/user.model");
 app.use(cors());
 require("dotenv").config();
 
-const PORT = process.env.PORT || 8080;
 const authRoutes = require("./routes/users");
+const cardsRoutes = require("./routes/cards");
 const server = http.createServer(app);
 const cardsHelper = require("./helpers/cardsHelper");
 
@@ -48,6 +48,7 @@ app.get("/ping", (req, res) => {
 });
 
 app.use("/users", authRoutes);
+app.use("/cards", cardsRoutes);
 
 const rooms = new Map();
 let roomsAvaiable = [];
@@ -75,6 +76,60 @@ const handleCards = (cardCode, array, userId) => {
   } else {
     throw new Error("Código inválido.");
   }
+};
+
+const decreasePlayerCard = async (userId, card) => {
+  // Find the user
+  const user = await User.findOne({ userId });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Find the card within the user's cards
+  const cardIndex = user.cards.findIndex((c) => c.cardCode === card);
+
+  if (cardIndex === -1) {
+    throw new Error("Card not found");
+  }
+
+  // Decrease the card quantity
+  user.cards[cardIndex].quantity -= 1;
+
+  // Remove the card if the quantity is zero
+  if (user.cards[cardIndex].quantity <= 0) {
+    user.cards.splice(cardIndex, 1);
+  }
+
+  // Save the updated user document
+  await user.save();
+
+  return user;
+};
+
+const increasePlayerCard = async (userId, card) => {
+  // Find the user
+  const user = await User.findOne({ userId });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Find the card within the user's cards
+  const cardIndex = user.cards.findIndex((c) => c.cardCode === card);
+
+  if (cardIndex === -1) {
+    // Card not found, add new card
+    user.cards.push({ cardCode: card, quantity: 1 });
+  } else {
+    // Card found, update quantity
+    user.cards[cardIndex].quantity += 1;
+  }
+
+  // Save the updated user document
+  await user.save();
+
+  return user;
 };
 
 // Socket.io connection handling
@@ -197,32 +252,7 @@ io.on("connection", (socket) => {
   socket.on("useCard", async (gameId, userId, card) => {
     const room = rooms.get(gameId);
 
-    // Find the user
-    const user = await User.findOne({ userId });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    console.log("user.cards::", user.cards);
-
-    // Find the card within the user's cards
-    const cardIndex = user.cards.findIndex((c) => c.cardCode === card);
-
-    if (cardIndex === -1) {
-      throw new Error("Card not found");
-    }
-
-    // Decrease the card quantity
-    user.cards[cardIndex].quantity -= 1;
-
-    // Remove the card if the quantity is zero
-    if (user.cards[cardIndex].quantity <= 0) {
-      user.cards.splice(cardIndex, 1);
-    }
-
-    // Save the updated user document
-    await user.save();
+    const user = await decreasePlayerCard(userId, card);
 
     const result = handleCards(card, room.players, userId);
     room.players = result.array;
@@ -231,6 +261,17 @@ io.on("connection", (socket) => {
 
     // Emit the updated card array to the user
     socket.emit("updatedCards", user.cards);
+  });
+
+  socket.on("stealPlayerCard", async (gameId, userId, opponentId, card) => {
+    const room = rooms.get(gameId);
+
+    const opponent = await decreasePlayerCard(opponentId, card);
+
+    if (opponent) {
+      const user = await increasePlayerCard(userId, card);
+      socket.emit("updatedCards", user.cards);
+    }
   });
 
   socket.on("nextRound", (gameId, userId) => {
@@ -252,12 +293,69 @@ io.on("connection", (socket) => {
     const room = rooms.get(gameId);
     io.to(gameId).emit("setRoundNumber", room.round);
   });
+
+  socket.on("getBattleWinner", (gameId, matchResults) => {
+    const room = rooms.get(gameId);
+    const winCounts = {};
+
+    // Count wins
+    for (const result of matchResults) {
+      if (!result.draw) {
+        if (!winCounts[result.winner]) {
+          winCounts[result.winner] = 0;
+        }
+        winCounts[result.winner]++;
+      }
+    }
+
+    // Determine the winner or if it's a tie
+    const requiredWins = 3; // Best of 5 requires at least 3 wins
+    let topWinner = null;
+    let highestWins = 0;
+    let isTie = false;
+
+    for (const [userId, wins] of Object.entries(winCounts)) {
+      if (wins > highestWins) {
+        highestWins = wins;
+        topWinner = userId;
+        isTie = false; // Reset tie status as we found a new leader
+      } else if (wins === highestWins) {
+        isTie = true;
+      }
+    }
+
+    const objectIdToFind = topWinner;
+    const index = room.players.findIndex((obj) => obj.id === objectIdToFind);
+
+    const loserIndex = index === 1 ? 0 : 1;
+
+    // socket.emit('setBattleWinner', {draw: isTie || highestWins < requiredWins, winner: })
+
+    // Final determination based on win counts
+    if (isTie || highestWins < requiredWins) {
+      socket.emit("setBattleWinner", {
+        draw: true,
+        winner: undefined,
+        loser: undefined,
+      });
+    } else {
+      socket.emit("setBattleWinner", {
+        draw: false,
+        winner: topWinner,
+        loser: room.players[loserIndex].id,
+      });
+    }
+  });
 });
 
-app.listen(PORT, () => {
-  console.log("Server started listening on PORT : " + PORT);
-});
+server.listen(
+  process.env.SERVER_PORT || 3000,
+  process.env.SERVER_HOST || "0.0.0.0",
+  () => {
+    console.log(`Server is running on port ${process.env.SERVER_PORT || 3000}`);
+  }
+);
 
-server.listen(PORT, "192.168.1.2", () => {
-  console.log(`Server is running on port ${PORT}`);
+server.off("server.off", () => {
+  console.log("[http] Server stopping...");
 });

@@ -19,6 +19,7 @@
     "joi": "^17.3.0",
     "jsonwebtoken": "^8.5.1",
     "koa": "^2.15.3",
+    "nodemon": "^3.1.0",
     "mongo-sanitize": "^1.1.0",
     "mongoose": "^5.11.10",
     "nanoid": "^3.1.20",
@@ -27,6 +28,6 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "@flydotio/dockerfile": "^0.5.7"
   }
 }
