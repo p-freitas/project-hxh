@@ -58,7 +58,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
 
   const handlePackClick = (openAll: boolean, packType: string) => {
     randomRegular(1, 4, openAll, packType);
-    $(".pack-standard-container").fadeOut(1500);
+    $(".pack-standard-container").fadeOut(1000);
     $("#pack-standard").fadeOut(1500);
     $(".pack-wrapper")
       .delay(500)
