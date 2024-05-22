@@ -171,11 +171,10 @@ const Lobby = ({ socket }: any) => {
       )}
       {showPackOpening && userPacks && (
         <PackOpening
-          socket={socket}
-          userId={userId}
           userPacks={userPacks}
           setShowPackOpening={setShowPackOpening}
           handleOpenPacks={handleOpenPacks}
+          showPackOpening={showPackOpening}
         />
       )}
     </>

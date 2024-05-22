@@ -5,7 +5,7 @@ interface CardContainerProps {
 }
 
 const CardContainer = styled.div<CardContainerProps>`
-  .card {
+  .card-container {
     &:after {
       content: "${(props) => props.content}";
       display: flex;

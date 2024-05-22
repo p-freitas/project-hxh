@@ -1,22 +1,21 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React, { useEffect, useRef, useCallback, useState } from "react";
 import $ from "jquery";
+import "animate.css";
 import "./styles.css";
 
 interface PackOpeningProps {
   userPacks: any;
   setShowPackOpening: any;
   handleOpenPacks: any;
-  socket: any;
-  userId: string | null;
+  showPackOpening: boolean;
 }
 
 const PackOpening: React.FC<PackOpeningProps> = ({
   userPacks,
   setShowPackOpening,
   handleOpenPacks,
-  socket,
-  userId,
+  showPackOpening,
 }) => {
   const packWrapperRef = useRef<HTMLDivElement>(null);
   // const audioRef = useRef<HTMLAudioElement>(null);
@@ -24,6 +23,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
   const bodyRef = useRef<HTMLBodyElement>(null);
 
   const [openAllPacks, setOpenAllPacks] = useState<boolean>(false);
+  const [isClosing, setIsClosing] = useState<boolean>(false);
 
   const randomRegular = (
     min: number,
@@ -92,9 +92,22 @@ const PackOpening: React.FC<PackOpeningProps> = ({
     return true;
   };
 
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setShowPackOpening(false);
+      setIsClosing(false);
+    }, 500);
+  };
+
   return (
-    // @ts-ignore
-    <div ref={bodyRef} className="pack-opening-container">
+    <div
+      // @ts-ignore
+      ref={bodyRef}
+      className={`pack-opening-container animate__animated animate__bounceIn  ${
+        showPackOpening ? "open" : ""
+      } ${isClosing ? "animate__animated animate__bounceOut" : ""}`}
+    >
       <svg className="loader" viewBox="0 0 100 100" overflow="visible">
         <g className="core">
           <circle className="path" cx="50" cy="50" r="1" fill="none" />
@@ -156,7 +169,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
           >
             Abrir todos
           </button>
-          <button onClick={() => setShowPackOpening(false)}>Fechar</button>
+          <button onClick={handleClose}>Fechar</button>
         </div>
       </div>
 
@@ -203,7 +216,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
           )}
         </div>
         <div className="close-packs-button-container">
-          <button onClick={() => setShowPackOpening(false)}>Fechar</button>
+          <button onClick={handleClose}>Fechar</button>
         </div>
       </div>
     </div>

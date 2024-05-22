@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDice, { ReactDiceRef } from "react-dice-complete";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "animate.css";
 import "./styles.css";
 import { motion } from "framer-motion";
@@ -33,6 +33,7 @@ type BattleResultType = {
 
 const Battle = ({ socket }: any) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const axios = useAxios();
   const userId = sessionStorage.getItem("userId");
   const token = sessionStorage.getItem("token");
@@ -86,7 +87,13 @@ const Battle = ({ socket }: any) => {
   const [battleFinished, setBattleFinished] = useState<boolean>(false);
   const [battleResult, setBattleResult] = useState<BattleResultType>();
   const [opponentCards, setOpponentCards] = useState<CardSelectedType[]>();
-  const [animated, setAnimated] = useState(false);
+  const [animated, setAnimated] = useState<boolean>(false);
+  const [disableCards, setDisableCards] = useState<boolean>(true);
+  const [cardPlayed, setCardPlayed] = useState<boolean>(false);
+  const [disableStealPlayerCardButton, setDisableStealPlayerCardButton] =
+    useState<boolean>(false);
+  const [disableGainPackButton, setDisableGainPackButton] =
+    useState<boolean>(false);
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -201,6 +208,7 @@ const Battle = ({ socket }: any) => {
   useEffect(() => {
     socket.on("setRoundResult", (data: RoundResult[], round: number) => {
       setTimeout(() => {
+        setDisableCards(false);
         setRoundResults(data);
         data?.map((item) => {
           return item.id === userId
@@ -222,7 +230,7 @@ const Battle = ({ socket }: any) => {
             }
 
             // Rule 1: Both scores less than 21
-            if (accScore < 21 && objScore < 21) {
+            if (accScore <= 21 && objScore <= 21) {
               const accDiff = 21 - accScore;
               const objDiff = 21 - objScore;
               if (objDiff < accDiff) {
@@ -372,6 +380,10 @@ const Battle = ({ socket }: any) => {
       setPlayerRoundButtonPressed(false);
       setPlayersReady(false);
       setDiceKey(diceKey + 1);
+      setDisableCards(true);
+      setHideCard("hide");
+      setHideCardPlayer2("hide");
+      setCardPlayed(false);
     });
 
     return () => {
@@ -379,15 +391,26 @@ const Battle = ({ socket }: any) => {
     };
   }, [diceKey, socket]);
 
+  useEffect(() => {
+    socket.on("readyToFinishBattle", () => {
+      socket.emit("getBattleWinner", gameId, roundResultsWinner);
+    });
+
+    return () => {
+      socket.off("readyToFinishBattle");
+    };
+  }, [gameId, roundResultsWinner, socket]);
+
   const handlePlayRound = () => {
     if (battleFinished) {
-      socket.emit("getBattleWinner", gameId, roundResultsWinner);
+      socket.emit("playerReadyToFinishBattle", gameId, userId);
       setWatingPlayersMessagem(true);
       return;
     }
 
     if (playerAgainMessagem) {
-      socket.emit("nextRound", gameId, userId);
+      setDisableCards(true);
+      socket.emit("nextRound", gameId, userId, roundResultsWinner);
       setWatingPlayersMessagem(true);
       return;
     }
@@ -442,9 +465,11 @@ const Battle = ({ socket }: any) => {
     setCardSelectedSent(cardSelected);
     setHideCard("show");
     setCardOutAnimation(true);
+    setCardPlayed(true);
     setTimeout(() => {
       handleCloseModal();
       setCardSelected(undefined);
+      setCardOutAnimation(false);
     }, 300);
   };
 
@@ -456,9 +481,6 @@ const Battle = ({ socket }: any) => {
       battleResult?.loser,
       cardSelected?.cardCode
     );
-    // setCardSelectedSent(cardSelected);
-    // setHideCard("show");
-    // setCardOutAnimation(true);
     setTimeout(() => {
       handleCloseModal();
       setCardSelected(undefined);
@@ -466,6 +488,8 @@ const Battle = ({ socket }: any) => {
   };
 
   const handleStealPlayerCard = async () => {
+    setDisableGainPackButton(true);
+    setDisableStealPlayerCardButton(true);
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/cards/getOpponentCards`,
@@ -491,6 +515,12 @@ const Battle = ({ socket }: any) => {
   const handleOpenModal = (type: string) => {
     setModalType(type);
     setIsModalOpen(true);
+  };
+
+  const handleGetPacks = () => {
+    setDisableStealPlayerCardButton(true);
+    setDisableGainPackButton(true);
+    socket.emit("gainPacks", userId);
   };
 
   return (
@@ -593,7 +623,7 @@ const Battle = ({ socket }: any) => {
                 {watingPlayersMessagem
                   ? "Aguardando o outro jogador..."
                   : battleFinished
-                  ? "Ver o resultado da batalha"
+                  ? "Terminar a batalha"
                   : playerAgainMessagem
                   ? "Próximo round"
                   : `Jogar ${numDice} dados`}
@@ -608,8 +638,7 @@ const Battle = ({ socket }: any) => {
             </div>
             <button
               onClick={() => handleOpenModal("myCards")}
-              // disabled={disableButton}
-              // className="battle-dices-input-buttons"
+              disabled={disableCards}
             >
               Cartas de batalha
             </button>
@@ -624,13 +653,7 @@ const Battle = ({ socket }: any) => {
             <div>
               <h1>Empate!</h1>
               <div>
-                <button
-                // onClick={() => setIsModalOpen(true)}
-                // disabled={disableButton}
-                // className="battle-dices-input-buttons"
-                >
-                  Sair da batalha
-                </button>
+                <button onClick={() => navigate("/")}>Sair da batalha</button>
               </div>
             </div>
           ) : (
@@ -647,33 +670,28 @@ const Battle = ({ socket }: any) => {
                   <>
                     <button
                       onClick={handleStealPlayerCard}
-                      // disabled={disableButton}
-                      // className="battle-dices-input-buttons"
+                      disabled={disableStealPlayerCardButton}
                     >
                       Roubar carta do oponente
                     </button>
                     <button
-                    // onClick={() => setIsModalOpen(true)}
-                    // disabled={disableButton}
-                    // className="battle-dices-input-buttons"
+                      onClick={handleGetPacks}
+                      disabled={disableGainPackButton}
                     >
-                      Abrir dois pacotes
+                      Receber um pacote
                     </button>
                     <button
                       onClick={() => handleOpenModal("myCards")}
-                      // disabled={disableButton}
-                      // className="battle-dices-input-buttons"
                     >
                       Minhas cartas
+                    </button>
+                    <button onClick={() => navigate("/")}>
+                      Sair da batalha
                     </button>
                   </>
                 ) : (
                   <>
-                    <button
-                    // onClick={() => setIsModalOpen(true)}
-                    // disabled={disableButton}
-                    // className="battle-dices-input-buttons"
-                    >
+                    <button onClick={() => navigate("/")}>
                       Sair da batalha
                     </button>
                   </>
@@ -768,13 +786,13 @@ const Battle = ({ socket }: any) => {
               opponentCards?.map((card, index) => (
                 <CardContainer content={card.quantity} key={index}>
                   <div
-                    className="player-card-container"
-                    style={{
-                      boxShadow:
-                        index === cardSelected?.index
-                          ? "0 0 50px 15px rgb(0 255 14)"
-                          : "0px 0px 20px 0 rgb(0 0 0)",
-                    }}
+                    className={
+                      animated
+                        ? "animated player-card-container"
+                        : " player-card-container"
+                    }
+                    onMouseMove={(e) => handleMouseMove(e, `card-${index}`)}
+                    onMouseOut={() => handleMouseOut(`card-${index}`)}
                     onClick={() => {
                       if (cardSelected?.index !== index) {
                         return setCardSelected({
@@ -784,27 +802,51 @@ const Battle = ({ socket }: any) => {
                       }
                       return setCardSelected(undefined);
                     }}
+                    id={`card-${index}`}
                   >
                     <motion.div
-                      className={`card ${hideUsingCard} animate__bounceIn ${
+                      style={{
+                        boxShadow:
+                          index === cardSelected?.index
+                            ? "0 0 50px 15px rgb(0 255 14)"
+                            : "0px 0px 20px 0 rgb(0 0 0)",
+                      }}
+                      onHoverStart={() => {
+                        const myComponent = document.getElementById(
+                          `card-container-${card.cardCode}`
+                        );
+                        //@ts-ignore
+                        myComponent.style.boxShadow =
+                          "0px 0px 20px 5px rgb(0 225 255)";
+                      }}
+                      // @ts-ignore
+                      onMouseLeave={() => {
+                        const myComponent = document.getElementById(
+                          `card-container-${card.cardCode}`
+                        );
+
+                        return index === cardSelected?.index
+                          ? //@ts-ignore
+                            (myComponent.style.boxShadow =
+                              "0 0 50px 15px rgb(0 255 14)")
+                          : //@ts-ignore
+                            (myComponent.style.boxShadow =
+                              "0px 0px 20px 0 rgb(0 0 0)");
+                      }}
+                      className={`card-container demo ${hideUsingCard} animate__bounceIn ${
                         cardOutAnimation && cardSelected?.index === index
                           ? "animate__fadeOutUp"
                           : ""
                       }`}
                       whileHover={{ scale: 1.5 }}
                       whileTap={{ scale: 1 }}
-                      id={card.cardCode}
+                      id={`card-container-${card.cardCode}`}
                     >
-                      <motion.img
+                      <img
                         src={require(`../../assets/images/${card.cardCode}.png`)}
                         alt="carta"
-                        drag
-                        dragSnapToOrigin
-                        dragTransition={{
-                          bounceStiffness: 300,
-                          bounceDamping: 20,
-                        }}
-                        whileDrag={{ scale: 1 }}
+                        id="card"
+                        className="card card-content"
                       />
                     </motion.div>
                   </div>
@@ -819,7 +861,9 @@ const Battle = ({ socket }: any) => {
             <button
               onClick={handlePlayCard}
               // @ts-ignore
-              disabled={opponentCards?.length === 0 || battleResult}
+              disabled={
+                opponentCards?.length === 0 || battleResult || cardPlayed
+              }
             >
               Jogar carta
             </button>
