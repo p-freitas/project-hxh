@@ -399,6 +399,45 @@ exports.GetUserCards = async (req, res) => {
   }
 };
 
+exports.GetUserPacks = async (req, res) => {
+  const token = req.headers.authorization.split(" ")[1];
+
+  try {
+    const decodedToken = jwt.decode(token, { complete: true });
+    const userId = decodedToken.payload.id;
+
+    if (!userId) {
+      return res.status(400).json({
+        error: true,
+        message: "UserId not found.",
+      });
+    }
+
+    //1. Find if any account with that userId exists in DB
+    const user = await User.findOne({ userId: userId });
+
+    // NOT FOUND - Throw error
+    if (!user) {
+      return res.status(404).json({
+        error: true,
+        message: "User not found",
+      });
+    }
+
+    //Success
+    return res.send({
+      packs: user.packs,
+      total: user.packs.reduce((total, pack) => total + pack.quantity, 0),
+    });
+  } catch (err) {
+    console.error("GetUserCards error", err);
+    return res.status(500).json({
+      error: true,
+      message: "Couldn't get user cards. Please try again later.",
+    });
+  }
+};
+
 exports.ValidateToken = async (req, res) => {
   return res.status(200).json({
     error: false,

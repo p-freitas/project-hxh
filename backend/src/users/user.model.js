@@ -7,6 +7,11 @@ const cardSchema = new Schema({
   quantity: { type: Number, required: true },
 });
 
+const packSchema = new Schema({
+  packType: { type: String, required: true },
+  quantity: { type: Number, required: true },
+});
+
 const userSchema = new Schema(
   {
     userId: { type: String, unique: true, required: true },
@@ -25,6 +30,7 @@ const userSchema = new Schema(
     referralCode: { type: String, unique: true },
     referrer: { type: String, default: null },
     cards: { type: [cardSchema], default: [] },
+    packs: { type: [packSchema], default: [] },
   },
   {
     timestamps: {

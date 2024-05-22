@@ -22,6 +22,8 @@ router.get("/logout", validateToken, AuthController.Logout);
 
 router.get("/getUserCards", validateToken, AuthController.GetUserCards);
 
+router.get("/getUserPacks", validateToken, AuthController.GetUserPacks);
+
 router.get("/validateToken", validateToken, AuthController.ValidateToken);
 
 module.exports = router;

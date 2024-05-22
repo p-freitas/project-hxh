@@ -127,6 +127,53 @@ const increasePlayerCard = async (userId, card) => {
   }
 
   // Save the updated user document
+  user.save();
+
+  return user;
+};
+
+const openPack = async (userId, cards, openAll, packType) => {
+  // Find the user
+  const user = await User.findOne({ userId });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  cards.forEach((card) => {
+    // Find the card within the user's cards
+    const cardIndex = user.cards.findIndex((c) => c.cardCode === card);
+
+    if (cardIndex === -1) {
+      // Card not found, add new card
+      user.cards.push({ cardCode: card, quantity: 1 });
+    } else {
+      // Card found, update quantity
+      user.cards[cardIndex].quantity += 1;
+    }
+
+    // Save the updated user document
+  });
+
+  if (openAll) {
+    // Remove all packs
+    user.packs = [];
+  } else {
+    // Find the packs within the user's packs
+    const packIndex = user.packs.findIndex((c) => c.packType === packType);
+
+    if (packIndex === -1) {
+      throw new Error("Card not found");
+    }
+
+    // Decrease the packs quantity
+    user.packs[packIndex].quantity -= 1;
+
+    // Remove the packs if the quantity is zero
+    if (user.packs[packIndex].quantity <= 0) {
+      user.packs.splice(packIndex, 1);
+    }
+  }
   await user.save();
 
   return user;
@@ -345,6 +392,10 @@ io.on("connection", (socket) => {
         loser: room.players[loserIndex].id,
       });
     }
+  });
+
+  socket.on("openPack", async (userId, cards, openAll, packType) => {
+    await openPack(userId, cards, openAll, packType);
   });
 });
 
