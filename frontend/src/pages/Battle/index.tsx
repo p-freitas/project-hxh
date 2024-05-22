@@ -86,6 +86,44 @@ const Battle = ({ socket }: any) => {
   const [battleFinished, setBattleFinished] = useState<boolean>(false);
   const [battleResult, setBattleResult] = useState<BattleResultType>();
   const [opponentCards, setOpponentCards] = useState<CardSelectedType[]>();
+  const [animated, setAnimated] = useState(false);
+
+  const handleMouseMove = (
+    e: React.MouseEvent | React.TouchEvent,
+    cardId: any
+  ) => {
+    const card = document.getElementById(cardId);
+
+    if (!card) return;
+
+    const rect = card.getBoundingClientRect();
+    const pos = {
+      x: (e as React.MouseEvent).clientX - rect.left,
+      y: (e as React.MouseEvent).clientY - rect.top,
+    };
+
+    const l = pos.x;
+    const t = pos.y;
+    const h = card.offsetHeight;
+    const w = card.offsetWidth;
+    const px = Math.abs(Math.floor((100 / w) * l) - 100);
+    const py = Math.abs(Math.floor((100 / h) * t) - 100);
+    const lp = 50 + (px - 50) / 1.5;
+    const tp = 50 + (py - 50) / 1.5;
+    const ty = ((tp - 40) / 2) * -1;
+    const tx = ((lp - 40) / 1.5) * 0.5;
+    const tf = `transform: rotateX(${ty}deg) rotateY(${tx}deg);`;
+
+    card.setAttribute("style", tf);
+    setAnimated(false);
+  };
+
+  const handleMouseOut = (cardId: any) => {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+
+    card.style.transform = "";
+  };
   const [modalType, setModalType] = useState<string>();
 
   const getPlayerCards = async () => {
@@ -645,7 +683,6 @@ const Battle = ({ socket }: any) => {
           )}
         </div>
       )}
-
       <CardsModal isOpen={isModalOpen} onClose={handleCloseModal}>
         {modalType === "myCards" ? (
           <div className="cards-container">
@@ -655,11 +692,6 @@ const Battle = ({ socket }: any) => {
               playerCards?.map((card, index) => (
                 <CardContainer content={card.quantity} key={index}>
                   <div
-                    className="player-card-container"
-                    style={{
-                      borderColor:
-                        index === cardSelected?.index ? "greenyellow" : "black",
-                    }}
                     onClick={() => {
                       if (cardSelected?.index !== index) {
                         return setCardSelected({
@@ -669,27 +701,58 @@ const Battle = ({ socket }: any) => {
                       }
                       return setCardSelected(undefined);
                     }}
+                    onMouseMove={(e) => handleMouseMove(e, `card-${index}`)}
+                    onMouseOut={() => handleMouseOut(`card-${index}`)}
+                    className={
+                      animated
+                        ? "animated player-card-container"
+                        : " player-card-container"
+                    }
+                    id={`card-${index}`}
                   >
                     <motion.div
-                      className={`card ${hideUsingCard} animate__bounceIn ${
+                      style={{
+                        boxShadow:
+                          index === cardSelected?.index
+                            ? "0 0 50px 15px rgb(0 255 14)"
+                            : "0px 0px 20px 0 rgb(0 0 0)",
+                      }}
+                      onHoverStart={() => {
+                        const myComponent = document.getElementById(
+                          `card-container-${card.cardCode}`
+                        );
+                        //@ts-ignore
+                        myComponent.style.boxShadow =
+                          "0px 0px 20px 5px rgb(0 225 255)";
+                      }}
+                      // @ts-ignore
+                      onMouseLeave={() => {
+                        const myComponent = document.getElementById(
+                          `card-container-${card.cardCode}`
+                        );
+
+                        return index === cardSelected?.index
+                          ? //@ts-ignore
+                            (myComponent.style.boxShadow =
+                              "0 0 50px 15px rgb(0 255 14)")
+                          : //@ts-ignore
+                            (myComponent.style.boxShadow =
+                              "0px 0px 20px 0 rgb(0 0 0)");
+                      }}
+                      className={`card-container demo ${hideUsingCard} animate__bounceIn ${
                         cardOutAnimation && cardSelected?.index === index
                           ? "animate__fadeOutUp"
                           : ""
                       }`}
                       whileHover={{ scale: 1.5 }}
                       whileTap={{ scale: 1 }}
-                      id={card.cardCode}
+                      id={`card-container-${card.cardCode}`}
                     >
-                      <motion.img
+                      <img
                         src={require(`../../assets/images/${card.cardCode}.png`)}
                         alt="carta"
-                        drag
-                        dragSnapToOrigin
-                        dragTransition={{
-                          bounceStiffness: 300,
-                          bounceDamping: 20,
-                        }}
-                        whileDrag={{ scale: 1 }}
+                        id="card"
+                        className="card card-content"
                       />
                     </motion.div>
                   </div>
@@ -707,8 +770,10 @@ const Battle = ({ socket }: any) => {
                   <div
                     className="player-card-container"
                     style={{
-                      borderColor:
-                        index === cardSelected?.index ? "greenyellow" : "black",
+                      boxShadow:
+                        index === cardSelected?.index
+                          ? "0 0 50px 15px rgb(0 255 14)"
+                          : "0px 0px 20px 0 rgb(0 0 0)",
                     }}
                     onClick={() => {
                       if (cardSelected?.index !== index) {

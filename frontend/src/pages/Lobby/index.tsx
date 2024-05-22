@@ -4,6 +4,17 @@ import { useNavigate } from "react-router-dom";
 import "animate.css";
 import "./styles.css";
 import { useAxios } from "../../context/AxiosContext";
+import PackOpening from "../../components/PackOpening";
+
+type packsType = {
+  packType: string;
+  quantity: number;
+};
+
+type UserPacksType = {
+  packs: packsType[];
+  total: number;
+};
 
 const Lobby = ({ socket }: any) => {
   const navigate = useNavigate();
@@ -14,6 +25,8 @@ const Lobby = ({ socket }: any) => {
   const [watingPlayersMessagem, setWatingPlayersMessagem] =
     useState<boolean>(false);
   const [playButtonDisabled, setPlayButtonDisabled] = useState<boolean>(false);
+  const [showPackOpening, setShowPackOpening] = useState<boolean>(false);
+  const [userPacks, setUserPacks] = useState<UserPacksType>();
 
   const validateToken = async () => {
     try {
@@ -25,6 +38,24 @@ const Lobby = ({ socket }: any) => {
           },
         }
       );
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
+  };
+
+  const getUserPacks = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/users/getUserPacks`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.status === 200) {
+        setUserPacks(response.data);
+      }
     } catch (error) {
       console.error("Error sending request:", error);
     }
@@ -52,8 +83,21 @@ const Lobby = ({ socket }: any) => {
     }
   };
 
+  const handlePackButtonClick = () => {
+    setShowPackOpening(!showPackOpening);
+  };
+
+  const handleOpenPacks = (
+    cards: string[],
+    openAll: boolean,
+    packType: string
+  ) => {
+    socket.emit("openPack", userId, cards, openAll, packType);
+  };
+
   useEffect(() => {
     validateToken();
+    getUserPacks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -98,16 +142,41 @@ const Lobby = ({ socket }: any) => {
     };
   }, [navigate, socket]);
 
+  useEffect(() => {
+    socket.on("updatedPacks", (packs: any) => {
+      setUserPacks(packs);
+    });
+
+    return () => {
+      socket.off("updatedPacks");
+    };
+  }, [navigate, socket]);
+
   return (
     <>
       <button onClick={handleNewGame} disabled={playButtonDisabled}>
         Play
       </button>
+      {userPacks && (
+        <button onClick={handlePackButtonClick} disabled={userPacks?.total < 1}>
+          {`Abrir pacotes (${userPacks?.total})`}
+        </button>
+      )}
+
       {watingPlayersMessagem && (
         <>
           <p>Aguardando jogadores...</p>
           <button onClick={cancelMatchMaking}>Cancelar</button>
         </>
+      )}
+      {showPackOpening && userPacks && (
+        <PackOpening
+          socket={socket}
+          userId={userId}
+          userPacks={userPacks}
+          setShowPackOpening={setShowPackOpening}
+          handleOpenPacks={handleOpenPacks}
+        />
       )}
     </>
   );

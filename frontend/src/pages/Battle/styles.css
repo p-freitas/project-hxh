@@ -79,7 +79,6 @@
 .show-card {
     display: block;
     height: 250px;
-    margin: 5px;
 }
 
 .hide-card {
@@ -99,10 +98,14 @@
 }
 
 .results-card {
-    border: 5px solid;
+    border: 5px solid white;
     border-radius: 13px;
-    height: 251px;
-    width: 173px;
+    height: 260px;
+    width: 184px;
+}
+
+.results-card img {
+    border-radius: 10px;
 }
 
 .results-score-container h1 {
@@ -115,12 +118,10 @@
     justify-content: center;
     max-height: 700px;
     overflow: hidden auto;
-    padding: 0 0 5% 5%;
+    padding: 40px 0 75px 5%;
 }
 
 .player-card-container {
-    border: 5px solid;
-    border-radius: 10px;
     margin: 55px 55px 0 0;
     width: fit-content !important;
     height: fit-content;
@@ -144,11 +145,11 @@
     transform: scale(1.5);
 }
 
-.card {
+.card-container {
     cursor: pointer;
 }
 
-.card:after {
+.card-container:after {
     display: flex;
     width: 25px;
     height: 25px;
