@@ -94,6 +94,7 @@ const Battle = ({ socket }: any) => {
     useState<boolean>(false);
   const [disableGainPackButton, setDisableGainPackButton] =
     useState<boolean>(false);
+  const [showPack, setShowPack] = useState<boolean>(false);
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -521,6 +522,20 @@ const Battle = ({ socket }: any) => {
     setDisableStealPlayerCardButton(true);
     setDisableGainPackButton(true);
     socket.emit("gainPacks", userId);
+
+    setShowPack(true);
+    setTimeout(() => {
+      const myComponent = document.getElementById("pack");
+      myComponent?.classList.add("animate__tada");
+    }, 1000);
+    setTimeout(() => {
+      const myComponent = document.getElementById("pack");
+
+      myComponent?.classList.add("animate__backOutDown");
+    }, 2500);
+    setTimeout(() => {
+      setShowPack(false);
+    }, 3500);
   };
 
   return (
@@ -646,6 +661,22 @@ const Battle = ({ socket }: any) => {
         </>
       ) : (
         <div>
+          {showPack && (
+            <div
+              style={{
+                height: "100vh",
+                alignContent: "center",
+              }}
+              id="pack"
+            >
+              <img
+                src={require(`../../assets/images/01.png`)}
+                alt="carta"
+                className="animate__animated animate__backInDown"
+              />
+            </div>
+          )}
+
           <div>
             <h1>Resultado da batalha:</h1>
           </div>
@@ -680,9 +711,7 @@ const Battle = ({ socket }: any) => {
                     >
                       Receber um pacote
                     </button>
-                    <button
-                      onClick={() => handleOpenModal("myCards")}
-                    >
+                    <button onClick={() => handleOpenModal("myCards")}>
                       Minhas cartas
                     </button>
                     <button onClick={() => navigate("/")}>
