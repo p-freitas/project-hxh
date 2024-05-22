@@ -179,6 +179,31 @@ const openPack = async (userId, cards, openAll, packType) => {
   return user;
 };
 
+const addPacks = async (userId, packType, number) => {
+  // Find the user
+  const user = await User.findOne({ userId });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Find the pack within the user's pack
+  const packIndex = user.packs.findIndex((c) => c.packType === packType);
+
+  if (packIndex === -1) {
+    // pack not found, add new pack
+    user.packs.push({ packType: packType, quantity: number });
+  } else {
+    // pack found, update quantity
+    user.packs[packIndex].quantity += number;
+  }
+
+  // Save the updated user document
+  user.save();
+
+  return user;
+};
+
 // Socket.io connection handling
 io.on("connection", (socket) => {
   console.log(`A user connected with id: ${socket.id}`);
@@ -209,7 +234,14 @@ io.on("connection", (socket) => {
   socket.on("createGame", (gameId, userId) => {
     rooms.set(gameId, {
       id: gameId,
-      players: [{ id: userId, isReady: false, dices: [] }],
+      players: [
+        {
+          id: userId,
+          isReady: false,
+          playerReadyFinishBattle: false,
+          dices: [],
+        },
+      ],
       round: 1,
     });
     socket.emit("gameCreated", gameId);
@@ -223,7 +255,12 @@ io.on("connection", (socket) => {
     const playerExists = room.players.some((player) => player.id === userId);
 
     if (!playerExists) {
-      room.players.push({ id: userId, isReady: false, dices: [] });
+      room.players.push({
+        id: userId,
+        isReady: false,
+        playerReadyFinishBattle: false,
+        dices: [],
+      });
     }
     io.to(gameId).emit("joinedGame", gameId);
   });
@@ -321,7 +358,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("nextRound", (gameId, userId) => {
+  socket.on("nextRound", (gameId, userId, matchResults) => {
     const room = rooms.get(gameId);
     const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
     room.players[indexToEdit].isReady = false;
@@ -332,7 +369,50 @@ io.on("connection", (socket) => {
       room.players[1].isReady === false
     ) {
       room.round = room.round + 1;
-      io.to(gameId).emit("resetRound", room.round);
+      const winCounts = {};
+
+      // Count wins
+      for (const result of matchResults) {
+        if (!result.draw) {
+          if (!winCounts[result.winner]) {
+            winCounts[result.winner] = 0;
+          }
+          winCounts[result.winner]++;
+        }
+      }
+
+      // Determine the winner or if it's a tie
+      const requiredWins = 3; // Best of 5 requires at least 3 wins
+      let topWinner = null;
+      let highestWins = 0;
+      let isTie = false;
+
+      for (const [userId, wins] of Object.entries(winCounts)) {
+        if (wins > highestWins) {
+          highestWins = wins;
+          topWinner = userId;
+          isTie = false; // Reset tie status as we found a new leader
+        } else if (wins === highestWins) {
+          isTie = true;
+        }
+      }
+
+      const objectIdToFind = topWinner;
+      const index = room.players.findIndex((obj) => obj.id === objectIdToFind);
+
+      const loserIndex = index === 1 ? 0 : 1;
+
+
+      // Final determination based on win counts
+      if (isTie || highestWins < requiredWins) {
+        io.to(gameId).emit("resetRound", room.round);
+      } else {
+        io.to(gameId).emit("setBattleWinner", {
+          draw: false,
+          winner: topWinner,
+          loser: room.players[loserIndex].id,
+        });
+      }
     }
   });
 
@@ -396,6 +476,32 @@ io.on("connection", (socket) => {
 
   socket.on("openPack", async (userId, cards, openAll, packType) => {
     await openPack(userId, cards, openAll, packType);
+  });
+
+  socket.on("playerReadyToFinishBattle", (gameId, userId) => {
+    const room = rooms.get(gameId);
+
+    const objectIdToFind = userId;
+    const indexToEdit = room.players.findIndex(
+      (obj) => obj.id === objectIdToFind
+    );
+
+    if (indexToEdit !== -1) {
+      room.players[indexToEdit].playerReadyFinishBattle = true;
+
+      const allTrueValues = room.players.every(
+        (obj) => obj.playerReadyFinishBattle === true
+      );
+      if (allTrueValues) {
+        io.to(gameId).emit("readyToFinishBattle");
+      }
+    } else {
+      console.log("Object not found in array.");
+    }
+  });
+
+  socket.on("gainPacks", async (userId) => {
+    await addPacks(userId, "battle", 1);
   });
 });
 
