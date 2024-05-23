@@ -16,6 +16,7 @@ const cardsHelper = {
       status: true,
       dices: [dicesAffected],
       playerAffected: array[index].id,
+      lastDice: true,
     };
 
     return {

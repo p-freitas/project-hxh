@@ -210,6 +210,14 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     try {
       console.log(`A user disconnected with id: ${socket.id}`);
+      const exists = roomsAvaiable.some(
+        (obj) => obj.socketsWating === socket.id
+      );
+      if (exists) {
+        roomsAvaiable = roomsAvaiable.filter(
+          (item) => item.socketsWating !== socket.id
+        );
+      }
     } catch (error) {
       console.error("disconnect error::", error);
     }
@@ -252,10 +260,10 @@ io.on("connection", (socket) => {
   socket.on("joinGame", (gameId, userId) => {
     socket.join(gameId);
     const room = rooms.get(gameId);
-    const playerExists = room.players.some((player) => player.id === userId);
+    const playerExists = room?.players?.some((player) => player.id === userId);
 
     if (!playerExists) {
-      room.players.push({
+      room?.players?.push({
         id: userId,
         isReady: false,
         playerReadyFinishBattle: false,
@@ -263,6 +271,10 @@ io.on("connection", (socket) => {
       });
     }
     io.to(gameId).emit("joinedGame", gameId);
+  });
+
+  socket.on("joinGameAgain", (gameId, userId) => {
+    socket.join(gameId);
   });
 
   socket.on("playerIsReady", (gameId, userId, isReady) => {
@@ -278,6 +290,7 @@ io.on("connection", (socket) => {
 
       const allTrueValues = room.players.every((obj) => obj.isReady === true);
       if (allTrueValues) {
+        console.log("io.to(gameId)::", io.to(gameId).rooms);
         io.to(gameId).emit("ready");
       }
     } else {
@@ -330,11 +343,33 @@ io.on("connection", (socket) => {
       score: player.dices.reduce((total, dice) => total + dice, 0),
     }));
 
-    socket.emit("setRoundResult", sums, room.round);
+    console.log("sums::", sums);
+    console.log("room.players::", room.players);
+
+    socket.emit("setRoundResult", sums, room.round, room.players[0].id);
+  });
+
+  socket.on("getRoundResultUpdated", (gameId) => {
+    const room = rooms.get(gameId);
+
+    // Calculate sum of dices for each player
+    const sums = room.players.map((player) => ({
+      id: player.id,
+      score: player.dices.reduce((total, dice) => total + dice, 0),
+    }));
+
+    socket.emit("setRoundResultUpdated", sums, room.round);
   });
 
   socket.on("useCard", async (gameId, userId, card) => {
+    console.log("card::", card);
     const room = rooms.get(gameId);
+    const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
+    const player2Index = indexToEdit === 0 ? 1 : 0;
+
+    if (indexToEdit !== -1) {
+      room.players[player2Index].isReady = true;
+    }
 
     const user = await decreasePlayerCard(userId, card);
 
@@ -359,15 +394,17 @@ io.on("connection", (socket) => {
   });
 
   socket.on("nextRound", (gameId, userId, matchResults) => {
+    console.log("matchResults 1::", matchResults);
     const room = rooms.get(gameId);
     const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
     room.players[indexToEdit].isReady = false;
-    room.players[indexToEdit].dices = [];
+    // room.players[indexToEdit].dices = [];
 
     if (
       room.players[0].isReady === false &&
       room.players[1].isReady === false
     ) {
+      console.log("matchResults 2::", matchResults);
       room.round = room.round + 1;
       const winCounts = {};
 
@@ -402,17 +439,20 @@ io.on("connection", (socket) => {
 
       const loserIndex = index === 1 ? 0 : 1;
 
-
       // Final determination based on win counts
       if (isTie || highestWins < requiredWins) {
+        console.log("if");
         io.to(gameId).emit("resetRound", room.round);
       } else {
+        console.log("else");
         io.to(gameId).emit("setBattleWinner", {
           draw: false,
           winner: topWinner,
           loser: room.players[loserIndex].id,
         });
       }
+      room.players[0].dices = [];
+      room.players[1].dices = [];
     }
   });
 
@@ -460,13 +500,13 @@ io.on("connection", (socket) => {
 
     // Final determination based on win counts
     if (isTie || highestWins < requiredWins) {
-      socket.emit("setBattleWinner", {
+      io.to(gameId).emit("setBattleWinner", {
         draw: true,
         winner: undefined,
         loser: undefined,
       });
     } else {
-      socket.emit("setBattleWinner", {
+      io.to(gameId).emit("setBattleWinner", {
         draw: false,
         winner: topWinner,
         loser: room.players[loserIndex].id,
@@ -493,7 +533,7 @@ io.on("connection", (socket) => {
         (obj) => obj.playerReadyFinishBattle === true
       );
       if (allTrueValues) {
-        io.to(gameId).emit("readyToFinishBattle");
+        io.to(gameId).emit("readyToFinishBattle", room.players[0].id);
       }
     } else {
       console.log("Object not found in array.");
@@ -502,6 +542,20 @@ io.on("connection", (socket) => {
 
   socket.on("gainPacks", async (userId) => {
     await addPacks(userId, "battle", 1);
+  });
+
+  socket.on("leaveRoom", (gameId, userId) => {
+    const room = rooms.get(gameId);
+    // Filter out the player with the specified userId
+    room.players = room?.players?.filter((player) => player.id !== userId);
+
+    // Update the game object in the Map
+    rooms.set(gameId, room);
+    socket.leave(gameId);
+
+    if (room.players.length === 0) {
+      rooms.delete(gameId);
+    }
   });
 });
 
