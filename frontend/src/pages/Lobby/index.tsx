@@ -175,6 +175,7 @@ const Lobby = ({ socket }: any) => {
           setShowPackOpening={setShowPackOpening}
           handleOpenPacks={handleOpenPacks}
           showPackOpening={showPackOpening}
+          getUserPacks={getUserPacks}
         />
       )}
     </>

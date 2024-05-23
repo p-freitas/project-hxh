@@ -95,6 +95,7 @@ const Battle = ({ socket }: any) => {
   const [disableGainPackButton, setDisableGainPackButton] =
     useState<boolean>(false);
   const [showPack, setShowPack] = useState<boolean>(false);
+  const [roundAlreadyPlayed, setRoundAlreadyPlayed] = useState<boolean>(false);
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -159,6 +160,11 @@ const Battle = ({ socket }: any) => {
   }, []);
 
   useEffect(() => {
+    socket.emit("joinGameAgain", location.pathname.split("/")[2]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     setGameId(location.pathname.split("/")[2]);
   }, [location.pathname]);
 
@@ -207,133 +213,228 @@ const Battle = ({ socket }: any) => {
   }, [socket]);
 
   useEffect(() => {
-    socket.on("setRoundResult", (data: RoundResult[], round: number) => {
-      setTimeout(() => {
-        setDisableCards(false);
-        setRoundResults(data);
-        data?.map((item) => {
-          return item.id === userId
-            ? setRoundPlayer1Result(item.score)
-            : setRoundPlayer2Result(item.score);
-        });
-        const result = data.reduce<any>(
-          (acc, obj) => {
-            if (!acc.highestScorer) {
-              return { highestScorer: obj, draw: false };
-            }
+    socket.on(
+      "setRoundResult",
+      (data: RoundResult[], round: number, hostId: string) => {
+        setTimeout(
+          () => {
+            setDisableCards(false);
+            setRoundResults(data);
+            data?.map((item) => {
+              return item.id === userId
+                ? setRoundPlayer1Result(item.score)
+                : setRoundPlayer2Result(item.score);
+            });
+            const result = data.reduce<any>(
+              (acc, obj) => {
+                if (!acc.highestScorer) {
+                  return { highestScorer: obj, draw: false };
+                }
 
-            const accScore = acc.highestScorer.score;
-            const objScore = obj.score;
+                const accScore = acc.highestScorer.score;
+                const objScore = obj.score;
 
-            // Check if both scores are the same
-            if (accScore === objScore) {
-              return { ...acc, draw: true };
-            }
+                // Check if both scores are the same
+                if (accScore === objScore) {
+                  return { ...acc, draw: true };
+                }
 
-            // Rule 1: Both scores less than 21
-            if (accScore <= 21 && objScore <= 21) {
-              const accDiff = 21 - accScore;
-              const objDiff = 21 - objScore;
-              if (objDiff < accDiff) {
-                return { highestScorer: obj, draw: false };
+                // Rule 1: Both scores less than 21
+                if (accScore <= 21 && objScore <= 21) {
+                  const accDiff = 21 - accScore;
+                  const objDiff = 21 - objScore;
+                  if (objDiff < accDiff) {
+                    return { highestScorer: obj, draw: false };
+                  }
+                }
+                // Rule 2: One score more than 21, the other less than 21
+                else if (accScore > 21 && objScore <= 21) {
+                  return { highestScorer: obj, draw: false };
+                } else if (accScore <= 21 && objScore > 21) {
+                  return acc;
+                }
+                // Rule 3: Both scores more than 21
+                else if (accScore > 21 && objScore > 21) {
+                  const accDiff = accScore - 21;
+                  const objDiff = objScore - 21;
+                  if (objDiff < accDiff) {
+                    return { highestScorer: obj, draw: false };
+                  }
+                }
+
+                return acc;
+              },
+              { highestScorer: null, draw: false }
+            );
+
+            if (result && hostId === userId) {
+              if (!roundAlreadyPlayed) {
+                const newObj = {
+                  draw: result.draw,
+                  winner: result.highestScorer.id,
+                  round: roundNumber,
+                };
+                setRoundResultsWinner([...roundResultsWinner, newObj]);
+                setRoundAlreadyPlayed(true);
+              } else {
+                // @ts-ignore
+                setRoundResultsWinner(roundResultsWinner.pop());
+                const newObj = {
+                  draw: result.draw,
+                  winner: result.highestScorer.id,
+                  round: roundNumber,
+                };
+                setRoundResultsWinner([...roundResultsWinner, newObj]);
               }
             }
-            // Rule 2: One score more than 21, the other less than 21
-            else if (accScore > 21 && objScore <= 21) {
-              return { highestScorer: obj, draw: false };
-            } else if (accScore <= 21 && objScore > 21) {
-              return acc;
-            }
-            // Rule 3: Both scores more than 21
-            else if (accScore > 21 && objScore > 21) {
-              const accDiff = accScore - 21;
-              const objDiff = objScore - 21;
-              if (objDiff < accDiff) {
-                return { highestScorer: obj, draw: false };
-              }
+
+            switch (round) {
+              case 1:
+                result.draw
+                  ? setPoint1Color("draw")
+                  : result?.highestScorer?.id === userId
+                  ? setPoint1Color("winner")
+                  : setPoint1Color("loser");
+                break;
+              case 2:
+                result.draw
+                  ? setPoint2Color("draw")
+                  : result?.highestScorer?.id === userId
+                  ? setPoint2Color("winner")
+                  : setPoint2Color("loser");
+                break;
+              case 3:
+                result.draw
+                  ? setPoint3Color("draw")
+                  : result?.highestScorer?.id === userId
+                  ? setPoint3Color("winner")
+                  : setPoint3Color("loser");
+                break;
+              case 4:
+                result.draw
+                  ? setPoint4Color("draw")
+                  : result?.highestScorer?.id === userId
+                  ? setPoint4Color("winner")
+                  : setPoint4Color("loser");
+                break;
+              case 5:
+                result.draw
+                  ? setPoint5Color("draw")
+                  : result?.highestScorer?.id === userId
+                  ? setPoint5Color("winner")
+                  : setPoint5Color("loser");
+
+                setBattleFinished(true);
+                break;
+
+              default:
+                break;
             }
 
-            return acc;
+            setWatingPlayersMessagem(false);
+            setPlayerAgainMessagem(true);
+            setDisablePlayButton(false);
           },
-          { highestScorer: null, draw: false }
+          !cardPlayed ? 2200 : 0
         );
-
-        if (result) {
-          const newObj = {
-            draw: result.draw,
-            winner: result.highestScorer.id,
-          };
-          setRoundResultsWinner([...roundResultsWinner, newObj]);
-        }
-
-        switch (round) {
-          case 1:
-            result.draw
-              ? setPoint1Color("draw")
-              : result?.highestScorer?.id === userId
-              ? setPoint1Color("winner")
-              : setPoint1Color("loser");
-            break;
-          case 2:
-            result.draw
-              ? setPoint2Color("draw")
-              : result?.highestScorer?.id === userId
-              ? setPoint2Color("winner")
-              : setPoint2Color("loser");
-            break;
-          case 3:
-            result.draw
-              ? setPoint3Color("draw")
-              : result?.highestScorer?.id === userId
-              ? setPoint3Color("winner")
-              : setPoint3Color("loser");
-            break;
-          case 4:
-            result.draw
-              ? setPoint4Color("draw")
-              : result?.highestScorer?.id === userId
-              ? setPoint4Color("winner")
-              : setPoint4Color("loser");
-            break;
-          case 5:
-            result.draw
-              ? setPoint5Color("draw")
-              : result?.highestScorer?.id === userId
-              ? setPoint5Color("winner")
-              : setPoint5Color("loser");
-
-            setBattleFinished(true);
-            break;
-
-          default:
-            break;
-        }
-
-        setWatingPlayersMessagem(false);
-        setPlayerAgainMessagem(true);
-        setDisablePlayButton(false);
-      }, 2200);
-      setPlayerRoundButtonPressed(false);
-    });
+        setPlayerRoundButtonPressed(false);
+      }
+    );
 
     return () => {
       socket.off("setRoundResult");
     };
-  }, [gameId, roundResultsWinner, socket, userId]);
+  }, [
+    cardPlayed,
+    gameId,
+    roundAlreadyPlayed,
+    roundNumber,
+    roundResultsWinner,
+    socket,
+    userId,
+  ]);
 
   useEffect(() => {
     socket.on("cardResult", (data: any) => {
       if (data.dicesChanged.status === true) {
-        const index = data.array.findIndex(
-          (obj: { id: string | null }) => obj.id === userId
-        );
         if (data.playerAffected === userId) {
-          setNumDiceComponent(data.array[index].dices.length);
-          rollPlayer1Dices(data.array[index].dices);
+          data.dicesChanged.dices.forEach((element: number) => {
+            const diceElement = document.querySelectorAll(
+              `.player-container .die-container .roll${element}`
+            );
+            const index = data.dicesChanged.lastDice
+              ? diceElement.length - 1
+              : 0;
+            if (diceElement && diceElement[index]?.parentElement) {
+              //@ts-ignore
+              diceElement[index].parentElement.classList.add("dimmed");
+              //@ts-ignore
+              diceElement[index].parentElement.classList.add(
+                "animate__animated"
+              );
+              //@ts-ignore
+              diceElement[index].parentElement.classList.add(
+                "animate__heartBeat"
+              );
+
+              // Criação da nova estrutura HTML
+              const burnElement = document.createElement("div");
+              burnElement.className = "burn";
+              burnElement.innerHTML = `
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                    `;
+              //@ts-ignore
+              diceElement[index].parentElement.appendChild(burnElement);
+            }
+          });
         } else {
-          const player2index = index === 0 ? 1 : 0;
-          setPlayer2DiceNumber(data.array[player2index].dices.length);
-          rollPlayer2Dices(data.array[player2index].dices);
+          data.dicesChanged.dices.forEach((element: number) => {
+            const diceElement = document.querySelectorAll(
+              `.player2-container .die-container .roll${element}`
+            );
+            const index = data.dicesChanged.lastDice
+              ? diceElement.length - 1
+              : 0;
+            if (diceElement && diceElement[index]?.parentElement) {
+              //@ts-ignore
+              diceElement[index].parentElement.classList.add("dimmed");
+              //@ts-ignore
+              diceElement[index].parentElement.classList.add(
+                "animate__animated"
+              );
+              //@ts-ignore
+              diceElement[index].parentElement.classList.add(
+                "animate__heartBeat"
+              );
+
+              // Criação da nova estrutura HTML
+              const burnElement = document.createElement("div");
+              burnElement.className = "burn";
+              burnElement.innerHTML = `
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                      <div class="flame"></div>
+                                    `;
+              //@ts-ignore
+              diceElement[index].parentElement.appendChild(burnElement);
+            }
+          });
         }
         socket.emit("getRoundResult", gameId, userId, true);
       }
@@ -385,6 +486,7 @@ const Battle = ({ socket }: any) => {
       setHideCard("hide");
       setHideCardPlayer2("hide");
       setCardPlayed(false);
+      setRoundAlreadyPlayed(false);
     });
 
     return () => {
@@ -393,14 +495,16 @@ const Battle = ({ socket }: any) => {
   }, [diceKey, socket]);
 
   useEffect(() => {
-    socket.on("readyToFinishBattle", () => {
-      socket.emit("getBattleWinner", gameId, roundResultsWinner);
+    socket.on("readyToFinishBattle", (hostId: string) => {
+      if (hostId === userId) {
+        socket.emit("getBattleWinner", gameId, roundResultsWinner);
+      }
     });
 
     return () => {
       socket.off("readyToFinishBattle");
     };
-  }, [gameId, roundResultsWinner, socket]);
+  }, [gameId, roundResultsWinner, socket, userId]);
 
   const handlePlayRound = () => {
     if (battleFinished) {
@@ -538,20 +642,30 @@ const Battle = ({ socket }: any) => {
     }, 3500);
   };
 
+  const handleLeaveRoom = () => {
+    navigate("/");
+    socket.emit("leaveRoom", gameId, userId);
+  };
+
   return (
     <div className="battle-container">
       <div className="round-counter">
-        <h2>Round {roundNumber}/5</h2>
-        <PointsCounter
-          roundNumber={roundNumber}
-          pointsColor={[
-            point1Color,
-            point2Color,
-            point3Color,
-            point4Color,
-            point5Color,
-          ]}
-        />
+        <div style={{ width: "100px" }}>
+          <button onClick={handleLeaveRoom}>Sair</button>
+        </div>
+        <div>
+          <h2>Round {roundNumber}/5</h2>
+          <PointsCounter
+            roundNumber={roundNumber}
+            pointsColor={[
+              point1Color,
+              point2Color,
+              point3Color,
+              point4Color,
+              point5Color,
+            ]}
+          />
+        </div>
       </div>
       {!battleResult ? (
         <>
@@ -670,7 +784,7 @@ const Battle = ({ socket }: any) => {
               id="pack"
             >
               <img
-                src={require(`../../assets/images/pack.png`)}
+                src={require(`../../assets/images/battle-pack.png`)}
                 alt="carta"
                 className="animate__animated animate__backInDown"
               />
@@ -684,7 +798,7 @@ const Battle = ({ socket }: any) => {
             <div>
               <h1>Empate!</h1>
               <div>
-                <button onClick={() => navigate("/")}>Sair da batalha</button>
+                <button onClick={handleLeaveRoom}>Sair da batalha</button>
               </div>
             </div>
           ) : (
@@ -714,15 +828,11 @@ const Battle = ({ socket }: any) => {
                     <button onClick={() => handleOpenModal("myCards")}>
                       Minhas cartas
                     </button>
-                    <button onClick={() => navigate("/")}>
-                      Sair da batalha
-                    </button>
+                    <button onClick={handleLeaveRoom}>Sair da batalha</button>
                   </>
                 ) : (
                   <>
-                    <button onClick={() => navigate("/")}>
-                      Sair da batalha
-                    </button>
+                    <button onClick={handleLeaveRoom}>Sair da batalha</button>
                   </>
                 )}
               </div>

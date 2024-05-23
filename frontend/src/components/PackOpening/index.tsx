@@ -9,6 +9,7 @@ interface PackOpeningProps {
   setShowPackOpening: any;
   handleOpenPacks: any;
   showPackOpening: boolean;
+  getUserPacks: any;
 }
 
 const PackOpening: React.FC<PackOpeningProps> = ({
@@ -16,6 +17,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
   setShowPackOpening,
   handleOpenPacks,
   showPackOpening,
+  getUserPacks,
 }) => {
   const packWrapperRef = useRef<HTMLDivElement>(null);
   // const audioRef = useRef<HTMLAudioElement>(null);
@@ -94,10 +96,20 @@ const PackOpening: React.FC<PackOpeningProps> = ({
 
   const handleClose = () => {
     setIsClosing(true);
+    getUserPacks();
     setTimeout(() => {
       setShowPackOpening(false);
       setIsClosing(false);
     }, 500);
+  };
+
+  const handleFlipAllCard = () => {
+    const elements = document.querySelectorAll(".pack-wrapper-container .item");
+
+    elements.forEach((element) => {
+      //@ts-ignore
+      element.click();
+    });
   };
 
   return (
@@ -216,6 +228,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
           )}
         </div>
         <div className="close-packs-button-container">
+          <button onClick={handleFlipAllCard}>Virar todas as cartas</button>
           <button onClick={handleClose}>Fechar</button>
         </div>
       </div>

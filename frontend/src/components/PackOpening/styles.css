@@ -68,6 +68,12 @@ ul li a {
     position: relative;
 }
 
+#pack-standard {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
 #pack-standard a {
     margin: 50px;
 }
