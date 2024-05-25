@@ -52,6 +52,8 @@ app.use("/cards", cardsRoutes);
 
 const rooms = new Map();
 let roomsAvaiable = [];
+const roomTimers = {};
+const timerInterval = 60;
 
 function generateRoomId() {
   try {
@@ -204,9 +206,36 @@ const addPacks = async (userId, packType, number) => {
   return user;
 };
 
+const startTimer = (roomId) => {
+  try {
+    if (roomTimers[roomId]) {
+      clearInterval(roomTimers[roomId].intervalId); // Clear any existing interval
+      roomTimers[roomId].time = roomTimers[roomId].defaultTime; // Reset the timer back to 10 seconds
+    } else {
+      roomTimers[roomId] = {
+        time: 10,
+      };
+    }
+    roomTimers[roomId].intervalId = setInterval(() => {
+      roomTimers[roomId].time--;
+      io.to(roomId).emit("timer", roomTimers[roomId].time); // send the updated timer value to the client
+      if (roomTimers[roomId]?.time === 0) {
+        clearInterval(roomTimers[roomId]?.intervalId); // stop the timer when it reaches 0
+
+        // io.to(roomId).emit("playersOut", playersOut[roomId]);
+
+        // checkIfIsThereWinner(roomId);
+      }
+    }, 1000);
+  } catch (error) {
+    console.error("startTimer error::", error);
+  }
+};
+
 // Socket.io connection handling
 io.on("connection", (socket) => {
   console.log(`A user connected with id: ${socket.id}`);
+
   socket.on("disconnect", () => {
     try {
       console.log(`A user disconnected with id: ${socket.id}`);
@@ -248,10 +277,13 @@ io.on("connection", (socket) => {
           isReady: false,
           playerReadyFinishBattle: false,
           dices: [],
+          socketId: socket.id,
         },
       ],
       round: 1,
     });
+    roomTimers[gameId] = [];
+    roomTimers[gameId].defaultTime = timerInterval;
     socket.emit("gameCreated", gameId);
     io.to(roomsAvaiable[0].socketsWating).emit("gameCreated", gameId);
     roomsAvaiable = roomsAvaiable.filter((item) => item.gameId !== gameId);
@@ -268,29 +300,36 @@ io.on("connection", (socket) => {
         isReady: false,
         playerReadyFinishBattle: false,
         dices: [],
+        socketId: socket.id,
       });
     }
     io.to(gameId).emit("joinedGame", gameId);
+    startTimer(gameId);
   });
 
   socket.on("joinGameAgain", (gameId, userId) => {
+    const room = rooms.get(gameId);
     socket.join(gameId);
+
+    const indexToEdit = room?.players?.findIndex((obj) => obj.id === userId);
+    if (indexToEdit !== -1) {
+      room.players[indexToEdit].socketId = socket.id;
+    }
   });
 
   socket.on("playerIsReady", (gameId, userId, isReady) => {
     const room = rooms.get(gameId);
 
     const objectIdToFind = userId;
-    const indexToEdit = room.players.findIndex(
+    const indexToEdit = room?.players?.findIndex(
       (obj) => obj.id === objectIdToFind
     );
 
     if (indexToEdit !== -1) {
       room.players[indexToEdit].isReady = isReady;
 
-      const allTrueValues = room.players.every((obj) => obj.isReady === true);
+      const allTrueValues = room?.players?.every((obj) => obj.isReady === true);
       if (allTrueValues) {
-        console.log("io.to(gameId)::", io.to(gameId).rooms);
         io.to(gameId).emit("ready");
       }
     } else {
@@ -343,10 +382,10 @@ io.on("connection", (socket) => {
       score: player.dices.reduce((total, dice) => total + dice, 0),
     }));
 
-    console.log("sums::", sums);
-    console.log("room.players::", room.players);
-
     socket.emit("setRoundResult", sums, room.round, room.players[0].id);
+    setTimeout(() => {
+      startTimer(gameId);
+    }, 2500);
   });
 
   socket.on("getRoundResultUpdated", (gameId) => {
@@ -362,7 +401,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("useCard", async (gameId, userId, card) => {
-    console.log("card::", card);
     const room = rooms.get(gameId);
     const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
     const player2Index = indexToEdit === 0 ? 1 : 0;
@@ -377,6 +415,7 @@ io.on("connection", (socket) => {
     room.players = result.array;
     socket.to(gameId).emit("oponentCard", card);
     io.to(gameId).emit("cardResult", result);
+    startTimer(gameId);
 
     // Emit the updated card array to the user
     socket.emit("updatedCards", user.cards);
@@ -443,6 +482,7 @@ io.on("connection", (socket) => {
       if (isTie || highestWins < requiredWins) {
         console.log("if");
         io.to(gameId).emit("resetRound", room.round);
+        startTimer(gameId);
       } else {
         console.log("else");
         io.to(gameId).emit("setBattleWinner", {
@@ -450,6 +490,7 @@ io.on("connection", (socket) => {
           winner: topWinner,
           loser: room.players[loserIndex].id,
         });
+        clearInterval(roomTimers[gameId].intervalId);
       }
       room.players[0].dices = [];
       room.players[1].dices = [];
@@ -505,12 +546,14 @@ io.on("connection", (socket) => {
         winner: undefined,
         loser: undefined,
       });
+      clearInterval(roomTimers[gameId].intervalId);
     } else {
       io.to(gameId).emit("setBattleWinner", {
         draw: false,
         winner: topWinner,
         loser: room.players[loserIndex].id,
       });
+      clearInterval(roomTimers[gameId].intervalId);
     }
   });
 
