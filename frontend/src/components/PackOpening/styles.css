@@ -191,6 +191,7 @@ li.active {
 }
 
 .pack-wrapper img.placeholder {
+    width: 220px;
     opacity: 1;
 }
 
@@ -219,6 +220,7 @@ li.active {
 }
 
 .pack-wrapper .show img.card {
+    width: 220px;
     position: absolute;
     top: 0;
     left: 0;

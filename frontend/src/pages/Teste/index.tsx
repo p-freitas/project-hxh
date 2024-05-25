@@ -21,7 +21,7 @@ const App: any = () => {
       setShow(false);
     }, 2700);
   };
-  
+
   return (
     <>
       <button onClick={handleClick}>mostrar</button>
@@ -35,7 +35,7 @@ const App: any = () => {
           id="pack"
         >
           <img
-            src={require(`../../assets/images/01.png`)}
+            src={require(`../../assets/images/01.svg`)}
             alt="carta"
             className="animate__animated animate__backInDown"
           />

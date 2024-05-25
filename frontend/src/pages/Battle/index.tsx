@@ -8,6 +8,7 @@ import CardsModal from "../../components/CardsModal";
 import PointsCounter from "../../components/PointsCounter";
 import { useAxios } from "../../context/AxiosContext";
 import CardContainer from "./styles";
+import CircularProgressBar from "../../components/CircularProgressBar";
 
 type RoundResult = {
   id: string;
@@ -96,6 +97,8 @@ const Battle = ({ socket }: any) => {
     useState<boolean>(false);
   const [showPack, setShowPack] = useState<boolean>(false);
   const [roundAlreadyPlayed, setRoundAlreadyPlayed] = useState<boolean>(false);
+  const [seconds, setSeconds] = useState<number>(60);
+  const [showTimer, setShowTimer] = useState<boolean>(true);
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -160,7 +163,7 @@ const Battle = ({ socket }: any) => {
   }, []);
 
   useEffect(() => {
-    socket.emit("joinGameAgain", location.pathname.split("/")[2]);
+    socket.emit("joinGameAgain", location.pathname.split("/")[2], userId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -267,26 +270,26 @@ const Battle = ({ socket }: any) => {
               { highestScorer: null, draw: false }
             );
 
-            if (result && hostId === userId) {
-              if (!roundAlreadyPlayed) {
-                const newObj = {
-                  draw: result.draw,
-                  winner: result.highestScorer.id,
-                  round: roundNumber,
-                };
-                setRoundResultsWinner([...roundResultsWinner, newObj]);
-                setRoundAlreadyPlayed(true);
-              } else {
-                // @ts-ignore
-                setRoundResultsWinner(roundResultsWinner.pop());
-                const newObj = {
-                  draw: result.draw,
-                  winner: result.highestScorer.id,
-                  round: roundNumber,
-                };
-                setRoundResultsWinner([...roundResultsWinner, newObj]);
-              }
+            // if (result && hostId === userId) {
+            if (!roundAlreadyPlayed) {
+              const newObj = {
+                draw: result.draw,
+                winner: result.highestScorer.id,
+                round: roundNumber,
+              };
+              setRoundResultsWinner([...roundResultsWinner, newObj]);
+              setRoundAlreadyPlayed(true);
+            } else {
+              // @ts-ignore
+              setRoundResultsWinner(roundResultsWinner.pop());
+              const newObj = {
+                draw: result.draw,
+                winner: result.highestScorer.id,
+                round: roundNumber,
+              };
+              setRoundResultsWinner([...roundResultsWinner, newObj]);
             }
+            // }
 
             switch (round) {
               case 1:
@@ -334,6 +337,7 @@ const Battle = ({ socket }: any) => {
             setWatingPlayersMessagem(false);
             setPlayerAgainMessagem(true);
             setDisablePlayButton(false);
+            setShowTimer(true);
           },
           !cardPlayed ? 2200 : 0
         );
@@ -487,6 +491,7 @@ const Battle = ({ socket }: any) => {
       setHideCardPlayer2("hide");
       setCardPlayed(false);
       setRoundAlreadyPlayed(false);
+      setShowTimer(true);
     });
 
     return () => {
@@ -506,6 +511,25 @@ const Battle = ({ socket }: any) => {
     };
   }, [gameId, roundResultsWinner, socket, userId]);
 
+  useEffect(() => {
+    if (seconds === 0) {
+      const element = document.querySelector("#play-round-button");
+
+      //@ts-ignore
+      element?.click();
+    }
+  }, [seconds]);
+
+  useEffect(() => {
+    socket.on("timer", (timer: any) => {
+      setSeconds(timer);
+    });
+
+    return () => {
+      socket.off("timer");
+    };
+  }, [socket]);
+
   const handlePlayRound = () => {
     if (battleFinished) {
       socket.emit("playerReadyToFinishBattle", gameId, userId);
@@ -515,6 +539,7 @@ const Battle = ({ socket }: any) => {
 
     if (playerAgainMessagem) {
       setDisableCards(true);
+      setShowTimer(false);
       socket.emit("nextRound", gameId, userId, roundResultsWinner);
       setWatingPlayersMessagem(true);
       return;
@@ -525,6 +550,7 @@ const Battle = ({ socket }: any) => {
     setDisablePlayButton(true);
     setDisableButton(true);
     setWatingPlayersMessagem(true);
+    setShowTimer(false);
     socket.emit("playerIsReady", gameId, userId, true);
   };
 
@@ -665,6 +691,11 @@ const Battle = ({ socket }: any) => {
               point5Color,
             ]}
           />
+          {seconds <= 30 && showTimer && (
+            <div className="timer-container">
+              <CircularProgressBar seconds={seconds} />
+            </div>
+          )}
         </div>
       </div>
       {!battleResult ? (
@@ -695,7 +726,7 @@ const Battle = ({ socket }: any) => {
                 <div className="results-card">
                   {oponentSelectedCard !== undefined && (
                     <img
-                      src={require(`../../assets/images/${oponentSelectedCard}.png`)}
+                      src={require(`../../assets/images/${oponentSelectedCard}.svg`)}
                       alt="carta"
                       className={`scale-on-hover animate__backInDown ${hideCardPlayer2}`}
                     />
@@ -709,7 +740,7 @@ const Battle = ({ socket }: any) => {
                 <div className="results-card">
                   {cardSelectedSent?.cardCode !== undefined && (
                     <img
-                      src={require(`../../assets/images/${cardSelectedSent?.cardCode}.png`)}
+                      src={require(`../../assets/images/${cardSelectedSent?.cardCode}.svg`)}
                       alt="carta"
                       className={`animate__backInUp scale-on-hover ${hideCard}`}
                     />
@@ -748,6 +779,7 @@ const Battle = ({ socket }: any) => {
               <button
                 onClick={handlePlayRound}
                 disabled={disablePlayButton || watingPlayersMessagem}
+                id="play-round-button"
               >
                 {watingPlayersMessagem
                   ? "Aguardando o outro jogador..."
@@ -906,7 +938,7 @@ const Battle = ({ socket }: any) => {
                       id={`card-container-${card.cardCode}`}
                     >
                       <img
-                        src={require(`../../assets/images/${card.cardCode}.png`)}
+                        src={require(`../../assets/images/${card.cardCode}.svg`)}
                         alt="carta"
                         id="card"
                         className="card card-content"
@@ -982,7 +1014,7 @@ const Battle = ({ socket }: any) => {
                       id={`card-container-${card.cardCode}`}
                     >
                       <img
-                        src={require(`../../assets/images/${card.cardCode}.png`)}
+                        src={require(`../../assets/images/${card.cardCode}.svg`)}
                         alt="carta"
                         id="card"
                         className="card card-content"

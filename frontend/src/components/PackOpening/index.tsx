@@ -48,7 +48,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
           "src",
           require(`../../assets/images/${
             numRand < 9 ? "0" + numRand : numRand
-          }.png`)
+          }.svg`)
         );
       }
       cards.push(`${numRand < 9 ? "0" + numRand : numRand}`);
@@ -219,7 +219,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
               >
                 <img
                   className="placeholder"
-                  src={require(`../../assets/images/fundo.png`)}
+                  src={require("../../assets/images/fundo.svg").default}
                   alt=""
                 />
                 <img className="card" alt="" src="" />
