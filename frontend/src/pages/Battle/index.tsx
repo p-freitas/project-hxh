@@ -88,6 +88,8 @@ const Battle = ({ socket }: any) => {
   const [battleFinished, setBattleFinished] = useState<boolean>(false);
   const [battleResult, setBattleResult] = useState<BattleResultType>();
   const [opponentCards, setOpponentCards] = useState<CardSelectedType[]>();
+  const [selectedStolenCard, setSelectedStolenCard] =
+    useState<CardSelectedType>();
   const [animated, setAnimated] = useState<boolean>(false);
   const [disableCards, setDisableCards] = useState<boolean>(true);
   const [cardPlayed, setCardPlayed] = useState<boolean>(false);
@@ -96,9 +98,12 @@ const Battle = ({ socket }: any) => {
   const [disableGainPackButton, setDisableGainPackButton] =
     useState<boolean>(false);
   const [showPack, setShowPack] = useState<boolean>(false);
+  const [showStoledCard, setShowStoledCard] = useState<boolean>(false);
   const [roundAlreadyPlayed, setRoundAlreadyPlayed] = useState<boolean>(false);
   const [seconds, setSeconds] = useState<number>(60);
   const [showTimer, setShowTimer] = useState<boolean>(true);
+  const [isClosingModal, setIsClosingModal] = useState(false);
+  const [inactiveCounter, setInactiveCounter] = useState<number>(0);
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -513,11 +518,15 @@ const Battle = ({ socket }: any) => {
 
   useEffect(() => {
     if (seconds === 0) {
-      const element = document.querySelector("#play-round-button");
+      if (!watingPlayersMessagem) {
+        setInactiveCounter(inactiveCounter + 1);
+        const element = document.querySelector("#play-round-button");
 
-      //@ts-ignore
-      element?.click();
+        //@ts-ignore
+        element?.click();
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seconds]);
 
   useEffect(() => {
@@ -529,6 +538,12 @@ const Battle = ({ socket }: any) => {
       socket.off("timer");
     };
   }, [socket]);
+
+  useEffect(() => {
+    if (inactiveCounter >= 4) {
+      socket.emit("getBattleWinner", gameId, [], userId);
+    }
+  }, [gameId, inactiveCounter, socket, userId]);
 
   const handlePlayRound = () => {
     if (battleFinished) {
@@ -605,6 +620,11 @@ const Battle = ({ socket }: any) => {
   };
 
   const handleStealPlayCardButton = () => {
+    setDisableStealPlayerCardButton(true);
+    setDisableGainPackButton(true);
+    setCardOutAnimation(true);
+    setIsClosingModal(true);
+
     socket.emit(
       "stealPlayerCard",
       gameId,
@@ -612,15 +632,15 @@ const Battle = ({ socket }: any) => {
       battleResult?.loser,
       cardSelected?.cardCode
     );
+
     setTimeout(() => {
       handleCloseModal();
-      setCardSelected(undefined);
-    }, 300);
+      setIsClosingModal(false);
+      handleStoledCardAnimation();
+    }, 500);
   };
 
   const handleStealPlayerCard = async () => {
-    setDisableGainPackButton(true);
-    setDisableStealPlayerCardButton(true);
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/cards/getOpponentCards`,
@@ -665,13 +685,34 @@ const Battle = ({ socket }: any) => {
     }, 2500);
     setTimeout(() => {
       setShowPack(false);
-    }, 3500);
+    }, 3200);
+  };
+
+  const handleStoledCardAnimation = () => {
+    setSelectedStolenCard(cardSelected);
+    setShowStoledCard(true);
+    setTimeout(() => {
+      const myComponent = document.getElementById("stoled-card");
+      myComponent?.classList.add("animate__tada");
+    }, 1000);
+    setTimeout(() => {
+      const myComponent = document.getElementById("stoled-card");
+
+      myComponent?.classList.add("animate__backOutDown");
+    }, 2500);
+    setTimeout(() => {
+      setShowStoledCard(false);
+      setCardSelected(undefined);
+      setCardOutAnimation(false);
+    }, 3200);
   };
 
   const handleLeaveRoom = () => {
     navigate("/");
     socket.emit("leaveRoom", gameId, userId);
   };
+
+  console.log("inactiveCounter::", inactiveCounter);
 
   return (
     <div className="battle-container">
@@ -822,6 +863,21 @@ const Battle = ({ socket }: any) => {
               />
             </div>
           )}
+          {showStoledCard && (
+            <div
+              style={{
+                height: "100vh",
+                alignContent: "center",
+              }}
+              id="stoled-card"
+            >
+              <img
+                src={require(`../../assets/images/${selectedStolenCard?.cardCode}.svg`)}
+                alt="carta"
+                className="animate__animated animate__backInDown"
+              />
+            </div>
+          )}
 
           <div>
             <h1>Resultado da batalha:</h1>
@@ -872,7 +928,12 @@ const Battle = ({ socket }: any) => {
           )}
         </div>
       )}
-      <CardsModal isOpen={isModalOpen} onClose={handleCloseModal}>
+      <CardsModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        isClosing={isClosingModal}
+        setIsClosing={setIsClosingModal}
+      >
         {modalType === "myCards" ? (
           <div className="cards-container">
             {playerCards?.length === 0 ? (
@@ -1006,7 +1067,7 @@ const Battle = ({ socket }: any) => {
                       }}
                       className={`card-container demo ${hideUsingCard} animate__bounceIn ${
                         cardOutAnimation && cardSelected?.index === index
-                          ? "animate__fadeOutUp"
+                          ? "animate__zoomOut"
                           : ""
                       }`}
                       whileHover={{ scale: 1.5 }}

@@ -312,7 +312,7 @@ io.on("connection", (socket) => {
     socket.join(gameId);
 
     const indexToEdit = room?.players?.findIndex((obj) => obj.id === userId);
-    if (indexToEdit !== -1) {
+    if (indexToEdit !== -1 && room.players) {
       room.players[indexToEdit].socketId = socket.id;
     }
   });
@@ -340,7 +340,7 @@ io.on("connection", (socket) => {
   socket.on("playerDices", (gameId, userId, dices) => {
     const room = rooms.get(gameId);
     const objectIdToFind = userId;
-    const indexToEdit = room.players.findIndex(
+    const indexToEdit = room?.players?.findIndex(
       (obj) => obj.id === objectIdToFind
     );
 
@@ -361,7 +361,7 @@ io.on("connection", (socket) => {
   socket.on("getPlayer2Dices", (gameId, userId) => {
     const room = rooms.get(gameId);
     const objectIdToFind = userId;
-    const indexToEdit = room.players.findIndex(
+    const indexToEdit = room?.players?.findIndex(
       (obj) => obj.id === objectIdToFind
     );
     const player2Index = indexToEdit === 0 ? 1 : 0;
@@ -377,7 +377,7 @@ io.on("connection", (socket) => {
     const room = rooms.get(gameId);
 
     // Calculate sum of dices for each player
-    const sums = room.players.map((player) => ({
+    const sums = room?.players?.map((player) => ({
       id: player.id,
       score: player.dices.reduce((total, dice) => total + dice, 0),
     }));
@@ -392,7 +392,7 @@ io.on("connection", (socket) => {
     const room = rooms.get(gameId);
 
     // Calculate sum of dices for each player
-    const sums = room.players.map((player) => ({
+    const sums = room?.players?.map((player) => ({
       id: player.id,
       score: player.dices.reduce((total, dice) => total + dice, 0),
     }));
@@ -402,7 +402,7 @@ io.on("connection", (socket) => {
 
   socket.on("useCard", async (gameId, userId, card) => {
     const room = rooms.get(gameId);
-    const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
+    const indexToEdit = room?.players?.findIndex((obj) => obj.id === userId);
     const player2Index = indexToEdit === 0 ? 1 : 0;
 
     if (indexToEdit !== -1) {
@@ -435,13 +435,13 @@ io.on("connection", (socket) => {
   socket.on("nextRound", (gameId, userId, matchResults) => {
     console.log("matchResults 1::", matchResults);
     const room = rooms.get(gameId);
-    const indexToEdit = room.players.findIndex((obj) => obj.id === userId);
+    const indexToEdit = room?.players?.findIndex((obj) => obj.id === userId);
     room.players[indexToEdit].isReady = false;
     // room.players[indexToEdit].dices = [];
 
     if (
-      room.players[0].isReady === false &&
-      room.players[1].isReady === false
+      room?.players[0]?.isReady === false &&
+      room?.players[1]?.isReady === false
     ) {
       console.log("matchResults 2::", matchResults);
       room.round = room.round + 1;
@@ -474,7 +474,9 @@ io.on("connection", (socket) => {
       }
 
       const objectIdToFind = topWinner;
-      const index = room.players.findIndex((obj) => obj.id === objectIdToFind);
+      const index = room?.players?.findIndex(
+        (obj) => obj.id === objectIdToFind
+      );
 
       const loserIndex = index === 1 ? 0 : 1;
 
@@ -502,9 +504,25 @@ io.on("connection", (socket) => {
     io.to(gameId).emit("setRoundNumber", room.round);
   });
 
-  socket.on("getBattleWinner", (gameId, matchResults) => {
+  socket.on("getBattleWinner", (gameId, matchResults, inactivityUserId) => {
     const room = rooms.get(gameId);
     const winCounts = {};
+
+    if (inactivityUserId) {
+      const loserIndex = room?.players?.findIndex(
+        (obj) => obj.id === inactivityUserId
+      );
+
+      const winnerIndex = loserIndex === 1 ? 0 : 1;
+
+      io.to(gameId).emit("setBattleWinner", {
+        draw: false,
+        winner: room.players[winnerIndex].id,
+        loser: room.players[loserIndex].id,
+      });
+      clearInterval(roomTimers[gameId].intervalId);
+      return;
+    }
 
     // Count wins
     for (const result of matchResults) {
@@ -533,7 +551,7 @@ io.on("connection", (socket) => {
     }
 
     const objectIdToFind = topWinner;
-    const index = room.players.findIndex((obj) => obj.id === objectIdToFind);
+    const index = room?.players?.findIndex((obj) => obj.id === objectIdToFind);
 
     const loserIndex = index === 1 ? 0 : 1;
 
@@ -565,14 +583,14 @@ io.on("connection", (socket) => {
     const room = rooms.get(gameId);
 
     const objectIdToFind = userId;
-    const indexToEdit = room.players.findIndex(
+    const indexToEdit = room?.players?.findIndex(
       (obj) => obj.id === objectIdToFind
     );
 
     if (indexToEdit !== -1) {
       room.players[indexToEdit].playerReadyFinishBattle = true;
 
-      const allTrueValues = room.players.every(
+      const allTrueValues = room?.players?.every(
         (obj) => obj.playerReadyFinishBattle === true
       );
       if (allTrueValues) {
@@ -590,13 +608,15 @@ io.on("connection", (socket) => {
   socket.on("leaveRoom", (gameId, userId) => {
     const room = rooms.get(gameId);
     // Filter out the player with the specified userId
-    room.players = room?.players?.filter((player) => player.id !== userId);
+    if (room.players) {
+      room.players = room?.players?.filter((player) => player.id !== userId);
+    }
 
     // Update the game object in the Map
     rooms.set(gameId, room);
     socket.leave(gameId);
 
-    if (room.players.length === 0) {
+    if (room?.players?.length === 0) {
       rooms.delete(gameId);
     }
   });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import "animate.css";
 import "./styles.css";
 
@@ -6,11 +6,17 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: any;
+  setIsClosing: any;
+  isClosing: boolean;
 }
 
-const CardsModal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
-  const [isClosing, setIsClosing] = useState(false);
-
+const CardsModal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  children,
+  isClosing,
+  setIsClosing,
+}) => {
   const handleClose = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -39,7 +45,7 @@ const CardsModal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
       document.removeEventListener("mousedown", handleOutsideClick);
       document.removeEventListener("touchstart", handleOutsideClick);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, setIsClosing]);
 
   return (
     <div

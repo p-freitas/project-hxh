@@ -39,6 +39,7 @@ const Lobby = ({ socket }: any) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [playerCards, setPlayerCard] = useState<CardSelectedType[]>();
   const [animated, setAnimated] = useState<boolean>(false);
+  const [isClosingModal, setIsClosingModal] = useState(false);
 
   const validateToken = async () => {
     try {
@@ -258,7 +259,12 @@ const Lobby = ({ socket }: any) => {
         />
       )}
 
-      <CardsModal isOpen={isModalOpen} onClose={handleCloseModal}>
+      <CardsModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        isClosing={isClosingModal}
+        setIsClosing={setIsClosingModal}
+      >
         <div className="cards-container">
           {playerCards?.length === 0 ? (
             <h1>Sem cartas</h1>
