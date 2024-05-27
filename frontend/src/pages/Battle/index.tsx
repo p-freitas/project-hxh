@@ -857,7 +857,7 @@ const Battle = ({ socket }: any) => {
               id="pack"
             >
               <img
-                src={require(`../../assets/images/battle-pack.png`)}
+                src={require(`../../assets/images/battle-pack.svg`)}
                 alt="carta"
                 className="animate__animated animate__backInDown"
               />

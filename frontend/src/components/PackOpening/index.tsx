@@ -161,7 +161,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
                 >
                   <img
                     className="btn"
-                    src={require(`../../assets/images/${pack.packType}-pack.png`)}
+                    src={require(`../../assets/images/${pack.packType}-pack2.svg`)}
                     alt=""
                   />
                 </a>
@@ -179,7 +179,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
               }
             }}
           >
-            Abrir todos
+            {`Abrir todos (${userPacks.total})`}
           </button>
           <button onClick={handleClose}>Fechar</button>
         </div>
