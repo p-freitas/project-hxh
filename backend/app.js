@@ -458,7 +458,7 @@ io.on("connection", (socket) => {
       }
 
       // Determine the winner or if it's a tie
-      const requiredWins = 3; // Best of 5 requires at least 3 wins
+      const requiredWins = 4; // Best of 5 requires at least 3 wins
       let topWinner = null;
       let highestWins = 0;
       let isTie = false;
@@ -535,7 +535,7 @@ io.on("connection", (socket) => {
     }
 
     // Determine the winner or if it's a tie
-    const requiredWins = 3; // Best of 5 requires at least 3 wins
+    const requiredWins = 4; // Best of 5 requires at least 3 wins
     let topWinner = null;
     let highestWins = 0;
     let isTie = false;
