@@ -83,6 +83,8 @@ const Battle = ({ socket }: any) => {
   const [point3Color, setPoint3Color] = useState<string>();
   const [point4Color, setPoint4Color] = useState<string>();
   const [point5Color, setPoint5Color] = useState<string>();
+  const [point6Color, setPoint6Color] = useState<string>();
+  const [point7Color, setPoint7Color] = useState<string>();
   const [diceKey, setDiceKey] = useState<number>(0);
   const [playerCards, setPlayerCard] = useState<CardSelectedType[]>();
   const [battleFinished, setBattleFinished] = useState<boolean>(false);
@@ -331,7 +333,21 @@ const Battle = ({ socket }: any) => {
                   : result?.highestScorer?.id === userId
                   ? setPoint5Color("winner")
                   : setPoint5Color("loser");
+                break;
+              case 6:
+                result.draw
+                  ? setPoint6Color("draw")
+                  : result?.highestScorer?.id === userId
+                  ? setPoint6Color("winner")
+                  : setPoint6Color("loser");
 
+                break;
+              case 7:
+                result.draw
+                  ? setPoint7Color("draw")
+                  : result?.highestScorer?.id === userId
+                  ? setPoint7Color("winner")
+                  : setPoint7Color("loser");
                 setBattleFinished(true);
                 break;
 
@@ -721,7 +737,7 @@ const Battle = ({ socket }: any) => {
           <button onClick={handleLeaveRoom}>Sair</button>
         </div>
         <div>
-          <h2>Round {roundNumber}/5</h2>
+          <h2>Round {roundNumber}/7</h2>
           <PointsCounter
             roundNumber={roundNumber}
             pointsColor={[
@@ -730,6 +746,8 @@ const Battle = ({ socket }: any) => {
               point3Color,
               point4Color,
               point5Color,
+              point6Color,
+              point7Color,
             ]}
           />
           {seconds <= 30 && showTimer && (

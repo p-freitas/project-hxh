@@ -34,6 +34,16 @@ const PointsCounter: React.FC<ModalProps> = ({ roundNumber, pointsColor }) => {
           roundNumber === 5 ? "current" : ""
         }`}
       />
+      <span
+        className={`points-counter 5 ${pointsColor[5]} ${
+          roundNumber === 6 ? "current" : ""
+        }`}
+      />
+      <span
+        className={`points-counter 5 ${pointsColor[6]} ${
+          roundNumber === 7 ? "current" : ""
+        }`}
+      />
     </div>
   );
 };
