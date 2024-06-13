@@ -231,7 +231,7 @@ const Lobby = ({ socket }: any) => {
   };
 
   return (
-    <>
+    <div className="lobby-container">
       <button onClick={handleNewGame} disabled={playButtonDisabled}>
         Play
       </button>
@@ -320,7 +320,7 @@ const Lobby = ({ socket }: any) => {
           )}
         </div>
       </CardsModal>
-    </>
+    </div>
   );
 };
 

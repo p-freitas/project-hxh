@@ -106,6 +106,7 @@ const Battle = ({ socket }: any) => {
   const [showTimer, setShowTimer] = useState<boolean>(true);
   const [isClosingModal, setIsClosingModal] = useState(false);
   const [inactiveCounter, setInactiveCounter] = useState<number>(0);
+  const [roundSelectedNumber, setRoundSelectedNumber] = useState<number>();
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -173,6 +174,21 @@ const Battle = ({ socket }: any) => {
     socket.emit("joinGameAgain", location.pathname.split("/")[2], userId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    socket.emit("getSelectedRandomNumber", location.pathname.split("/")[2]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    socket.on("setSelectedRandomNumber", (number: number) => {
+      setRoundSelectedNumber(number);
+    });
+
+    return () => {
+      socket.off("setSelectedRandomNumber");
+    };
+  }, [socket]);
 
   useEffect(() => {
     setGameId(location.pathname.split("/")[2]);
@@ -249,26 +265,40 @@ const Battle = ({ socket }: any) => {
                   return { ...acc, draw: true };
                 }
 
-                // Rule 1: Both scores less than 21
-                if (accScore <= 21 && objScore <= 21) {
-                  const accDiff = 21 - accScore;
-                  const objDiff = 21 - objScore;
-                  if (objDiff < accDiff) {
-                    return { highestScorer: obj, draw: false };
+                if (roundSelectedNumber) {
+                  // Rule 1: Both scores less than roundSelectedNumber
+                  if (
+                    accScore <= roundSelectedNumber &&
+                    objScore <= roundSelectedNumber
+                  ) {
+                    const accDiff = roundSelectedNumber - accScore;
+                    const objDiff = roundSelectedNumber - objScore;
+                    if (objDiff < accDiff) {
+                      return { highestScorer: obj, draw: false };
+                    }
                   }
-                }
-                // Rule 2: One score more than 21, the other less than 21
-                else if (accScore > 21 && objScore <= 21) {
-                  return { highestScorer: obj, draw: false };
-                } else if (accScore <= 21 && objScore > 21) {
-                  return acc;
-                }
-                // Rule 3: Both scores more than 21
-                else if (accScore > 21 && objScore > 21) {
-                  const accDiff = accScore - 21;
-                  const objDiff = objScore - 21;
-                  if (objDiff < accDiff) {
+                  // Rule 2: One score more than roundSelectedNumber, the other less than roundSelectedNumber
+                  else if (
+                    accScore > roundSelectedNumber &&
+                    objScore <= roundSelectedNumber
+                  ) {
                     return { highestScorer: obj, draw: false };
+                  } else if (
+                    accScore <= roundSelectedNumber &&
+                    objScore > roundSelectedNumber
+                  ) {
+                    return acc;
+                  }
+                  // Rule 3: Both scores more than roundSelectedNumber
+                  else if (
+                    accScore > roundSelectedNumber &&
+                    objScore > roundSelectedNumber
+                  ) {
+                    const accDiff = accScore - roundSelectedNumber;
+                    const objDiff = objScore - roundSelectedNumber;
+                    if (objDiff < accDiff) {
+                      return { highestScorer: obj, draw: false };
+                    }
                   }
                 }
 
@@ -375,6 +405,7 @@ const Battle = ({ socket }: any) => {
     roundAlreadyPlayed,
     roundNumber,
     roundResultsWinner,
+    roundSelectedNumber,
     socket,
     userId,
   ]);
@@ -755,6 +786,7 @@ const Battle = ({ socket }: any) => {
               <CircularProgressBar seconds={seconds} />
             </div>
           )}
+          <p>{roundSelectedNumber}</p>
         </div>
       </div>
       {!battleResult ? (
@@ -875,7 +907,7 @@ const Battle = ({ socket }: any) => {
               id="pack"
             >
               <img
-                src={require(`../../assets/images/battle-pack.svg`)}
+                src={require(`../../assets/images/battle-pack.png`)}
                 alt="carta"
                 className="animate__animated animate__backInDown"
               />
