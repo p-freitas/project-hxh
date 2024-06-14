@@ -53,7 +53,7 @@ app.use("/cards", cardsRoutes);
 const rooms = new Map();
 let roomsAvaiable = [];
 const roomTimers = {};
-const timerInterval = 60;
+const timerInterval = 60000;
 
 function generateRoomId() {
   try {
@@ -232,6 +232,10 @@ const startTimer = (roomId) => {
   }
 };
 
+const generateRandomNumber = () => {
+  return Math.floor(Math.random() * (30 - 6 + 1)) + 6;
+};
+
 // Socket.io connection handling
 io.on("connection", (socket) => {
   console.log(`A user connected with id: ${socket.id}`);
@@ -281,6 +285,7 @@ io.on("connection", (socket) => {
         },
       ],
       round: 1,
+      selectedRandomNumber: generateRandomNumber(),
     });
     roomTimers[gameId] = [];
     roomTimers[gameId].defaultTime = timerInterval;
@@ -312,7 +317,7 @@ io.on("connection", (socket) => {
     socket.join(gameId);
 
     const indexToEdit = room?.players?.findIndex((obj) => obj.id === userId);
-    if (indexToEdit !== -1 && room.players) {
+    if (indexToEdit !== -1 && room?.players) {
       room.players[indexToEdit].socketId = socket.id;
     }
   });
@@ -483,6 +488,11 @@ io.on("connection", (socket) => {
       // Final determination based on win counts
       if (isTie || highestWins < requiredWins) {
         console.log("if");
+        room.selectedRandomNumber = generateRandomNumber();
+        io.to(gameId).emit(
+          "setSelectedRandomNumber",
+          room.selectedRandomNumber
+        );
         io.to(gameId).emit("resetRound", room.round);
         startTimer(gameId);
       } else {
@@ -608,7 +618,7 @@ io.on("connection", (socket) => {
   socket.on("leaveRoom", (gameId, userId) => {
     const room = rooms.get(gameId);
     // Filter out the player with the specified userId
-    if (room.players) {
+    if (room?.players) {
       room.players = room?.players?.filter((player) => player.id !== userId);
     }
 
@@ -619,6 +629,11 @@ io.on("connection", (socket) => {
     if (room?.players?.length === 0) {
       rooms.delete(gameId);
     }
+  });
+
+  socket.on("getSelectedRandomNumber", (gameId) => {
+    const room = rooms.get(gameId);
+    socket.emit("setSelectedRandomNumber", room?.selectedRandomNumber);
   });
 });
 

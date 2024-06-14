@@ -1,19 +1,11 @@
 const Joi = require("joi");
 require("dotenv").config();
 const { v4: uuid } = require("uuid");
-const { customAlphabet: generate } = require("nanoid");
 const jwt = require("jsonwebtoken");
 
 const { generateJwt } = require("./helpers/generateJwt");
 const { sendEmail } = require("./helpers/mailer");
 const User = require("./user.model");
-
-const CHARACTER_SET =
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-const REFERRAL_CODE_LENGTH = 8;
-
-const referralCode = generate(CHARACTER_SET, REFERRAL_CODE_LENGTH);
 
 //Validate user schema
 const userSchema = Joi.object().keys({
@@ -21,7 +13,6 @@ const userSchema = Joi.object().keys({
   userName: Joi.string().required().max(15),
   password: Joi.string().required().min(4),
   confirmPassword: Joi.string().valid(Joi.ref("password")).required(),
-  referrer: Joi.string(),
 });
 
 exports.Signup = async (req, res) => {
@@ -309,28 +300,6 @@ exports.ResetPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("reset-password-error", error);
-    return res.status(500).json({
-      error: true,
-      message: error.message,
-    });
-  }
-};
-
-exports.ReferredAccounts = async (req, res) => {
-  try {
-    const { id, referralCode } = req.decoded;
-
-    const referredAccounts = await User.find(
-      { referrer: referralCode },
-      { email: 1, referralCode: 1, _id: 0 }
-    );
-    return res.send({
-      success: true,
-      accounts: referredAccounts,
-      total: referredAccounts.length,
-    });
-  } catch (error) {
-    console.error("fetch-referred-error.", error);
     return res.status(500).json({
       error: true,
       message: error.message,
