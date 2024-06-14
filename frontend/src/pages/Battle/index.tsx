@@ -3,12 +3,13 @@ import ReactDice, { ReactDiceRef } from "react-dice-complete";
 import { useLocation, useNavigate } from "react-router-dom";
 import "animate.css";
 import "./styles.css";
-import { motion } from "framer-motion";
+import { motion, PanInfo } from "framer-motion";
 import CardsModal from "../../components/CardsModal";
 import PointsCounter from "../../components/PointsCounter";
 import { useAxios } from "../../context/AxiosContext";
 import CardContainer from "./styles";
 import CircularProgressBar from "../../components/CircularProgressBar";
+import { ReactComponent as MyIcon } from "../../assets/images/01.svg";
 
 type RoundResult = {
   id: string;
@@ -102,11 +103,14 @@ const Battle = ({ socket }: any) => {
   const [showPack, setShowPack] = useState<boolean>(false);
   const [showStoledCard, setShowStoledCard] = useState<boolean>(false);
   const [roundAlreadyPlayed, setRoundAlreadyPlayed] = useState<boolean>(false);
-  const [seconds, setSeconds] = useState<number>(60);
+  const [seconds, setSeconds] = useState<number>(60000);
   const [showTimer, setShowTimer] = useState<boolean>(true);
   const [isClosingModal, setIsClosingModal] = useState(false);
   const [inactiveCounter, setInactiveCounter] = useState<number>(0);
   const [roundSelectedNumber, setRoundSelectedNumber] = useState<number>();
+  const [dragStart, setDragStart] = useState<number>();
+  const [startDrag, setStartDrag] = useState<boolean>(true);
+  const [scaled, setScaled] = useState(false);
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -759,7 +763,24 @@ const Battle = ({ socket }: any) => {
     socket.emit("leaveRoom", gameId, userId);
   };
 
-  console.log("inactiveCounter::", inactiveCounter);
+  const handleOnDragEnd = (info: PanInfo) => {
+    if (
+      dragStart &&
+      dragStart - info.point.y >= 150 &&
+      !disableCards &&
+      !cardPlayed
+    ) {
+      handlePlayCard();
+    }
+    // @ts-ignore
+    document.querySelector("body").style.background =
+      "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
+  };
+
+  const handleClick = () => {
+    setStartDrag(!startDrag);
+    setScaled(!scaled);
+  };
 
   return (
     <div className="battle-container">
@@ -859,6 +880,205 @@ const Battle = ({ socket }: any) => {
                 rollDone={rollDonePlayer1}
               />
             </div>
+            <div className="cards-container-test">
+              <motion.div
+                onHoverStart={() => {
+                  const myComponent =
+                    document.getElementById(`card-container-01`);
+                  //@ts-ignore
+                  myComponent.style.boxShadow =
+                    "0px 0px 20px 5px rgb(0 225 255)";
+                }}
+                // whileTap={{ scale: 2, zIndex: 999 }}
+                id={`card-container-01`}
+                className="card-test"
+                drag={startDrag}
+                dragSnapToOrigin
+                whileDrag={{ scale: 2, zIndex: 999 }}
+                onDrag={(event, info) => {
+                  if (
+                    dragStart &&
+                    dragStart - info.point.y >= 150 &&
+                    !disableCards &&
+                    !cardPlayed
+                  ) {
+                    // @ts-ignore
+                    document.querySelector("body").style.background =
+                      "linear-gradient(180deg, #9c1aff6b 0%, rgb(119, 0, 255) 100%)";
+                  } else {
+                    // @ts-ignore
+                    document.querySelector("body").style.background =
+                      "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
+                  }
+                }}
+                onDragStart={(event, info) => {
+                  setCardSelected({
+                    cardCode: "01",
+                    index: 1,
+                  });
+                  setDragStart(info.point.y);
+                }}
+                onDragEnd={(event, info) => {
+                  handleOnDragEnd(info);
+                }}
+              >
+                <MyIcon
+                  id="card"
+                  className={`${
+                    scaled ? "scaled centered" : ""
+                  } card card-content animate__animated animate__bounceInRight`}
+                  onClick={handleClick}
+                />
+              </motion.div>
+              <motion.div
+                onHoverStart={() => {
+                  const myComponent =
+                    document.getElementById(`card-container-01`);
+                  //@ts-ignore
+                  myComponent.style.boxShadow =
+                    "0px 0px 20px 5px rgb(0 225 255)";
+                }}
+                // whileTap={{ scale: 2, zIndex: 999 }}
+                id={`card-container-01`}
+                className="card-test"
+                drag={startDrag}
+                dragSnapToOrigin
+                whileDrag={{ scale: 2, zIndex: 999 }}
+                onDrag={(event, info) => {
+                  if (
+                    dragStart &&
+                    dragStart - info.point.y >= 150 &&
+                    !disableCards &&
+                    !cardPlayed
+                  ) {
+                    // @ts-ignore
+                    document.querySelector("body").style.background =
+                      "linear-gradient(180deg, #9c1aff6b 0%, rgb(119, 0, 255) 100%)";
+                  } else {
+                    // @ts-ignore
+                    document.querySelector("body").style.background =
+                      "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
+                  }
+                }}
+                onDragStart={(event, info) => {
+                  setCardSelected({
+                    cardCode: "01",
+                    index: 1,
+                  });
+                  setDragStart(info.point.y);
+                }}
+                onDragEnd={(event, info) => {
+                  handleOnDragEnd(info);
+                }}
+              >
+                <MyIcon
+                  id="card"
+                  className={`${
+                    scaled ? "scaled centered" : ""
+                  } card card-content animate__animated animate__bounceInRight`}
+                  onClick={handleClick}
+                />
+              </motion.div>
+              <motion.div
+                onHoverStart={() => {
+                  const myComponent =
+                    document.getElementById(`card-container-01`);
+                  //@ts-ignore
+                  myComponent.style.boxShadow =
+                    "0px 0px 20px 5px rgb(0 225 255)";
+                }}
+                // whileTap={{ scale: 2, zIndex: 999 }}
+                id={`card-container-01`}
+                className="card-test"
+                drag={startDrag}
+                dragSnapToOrigin
+                whileDrag={{ scale: 2, zIndex: 999 }}
+                onDrag={(event, info) => {
+                  if (
+                    dragStart &&
+                    dragStart - info.point.y >= 150 &&
+                    !disableCards &&
+                    !cardPlayed
+                  ) {
+                    // @ts-ignore
+                    document.querySelector("body").style.background =
+                      "linear-gradient(180deg, #9c1aff6b 0%, rgb(119, 0, 255) 100%)";
+                  } else {
+                    // @ts-ignore
+                    document.querySelector("body").style.background =
+                      "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
+                  }
+                }}
+                onDragStart={(event, info) => {
+                  setCardSelected({
+                    cardCode: "01",
+                    index: 1,
+                  });
+                  setDragStart(info.point.y);
+                }}
+                onDragEnd={(event, info) => {
+                  handleOnDragEnd(info);
+                }}
+              >
+                <MyIcon
+                  id="card"
+                  className={`${
+                    scaled ? "scaled centered" : ""
+                  } card card-content animate__animated animate__bounceInRight`}
+                  onClick={handleClick}
+                />
+              </motion.div>
+              <motion.div
+                onHoverStart={() => {
+                  const myComponent =
+                    document.getElementById(`card-container-01`);
+                  //@ts-ignore
+                  myComponent.style.boxShadow =
+                    "0px 0px 20px 5px rgb(0 225 255)";
+                }}
+                // whileTap={{ scale: 2, zIndex: 999 }}
+                id={`card-container-01`}
+                className="card-test"
+                drag={startDrag}
+                dragSnapToOrigin
+                whileDrag={{ scale: 2, zIndex: 999 }}
+                onDrag={(event, info) => {
+                  if (
+                    dragStart &&
+                    dragStart - info.point.y >= 150 &&
+                    !disableCards &&
+                    !cardPlayed
+                  ) {
+                    // @ts-ignore
+                    document.querySelector("body").style.background =
+                      "linear-gradient(180deg, #9c1aff6b 0%, rgb(119, 0, 255) 100%)";
+                  } else {
+                    // @ts-ignore
+                    document.querySelector("body").style.background =
+                      "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
+                  }
+                }}
+                onDragStart={(event, info) => {
+                  setCardSelected({
+                    cardCode: "01",
+                    index: 1,
+                  });
+                  setDragStart(info.point.y);
+                }}
+                onDragEnd={(event, info) => {
+                  handleOnDragEnd(info);
+                }}
+              >
+                <MyIcon
+                  id="card"
+                  className={`${
+                    scaled ? "scaled centered" : ""
+                  } card card-content animate__animated animate__bounceInRight`}
+                  onClick={handleClick}
+                />
+              </motion.div>
+            </div>
+
             <div className="battle-dices-inputs player1">
               <button
                 onClick={() => numDice !== 1 && setNumDice(numDice - 1)}
@@ -888,12 +1108,12 @@ const Battle = ({ socket }: any) => {
                 +
               </button>
             </div>
-            <button
+            {/* <button
               onClick={() => handleOpenModal("myCards")}
               disabled={disableCards}
             >
               Cartas de batalha
-            </button>
+            </button> */}
           </div>
         </>
       ) : (

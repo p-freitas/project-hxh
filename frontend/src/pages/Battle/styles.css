@@ -8,11 +8,11 @@
 }
 
 .player-container {
-    height: 35%;
+    height: 40%;
 }
 
 .player2-container {
-    height: 25%;
+    height: 20%;
     display: flex;
     flex-direction: column-reverse;
 }
@@ -31,10 +31,44 @@
 
 .results-container img.show {
     display: block;
+    width: 140px;
 }
 
 .playersDices {
-    height: 65%;
+    height: 35%;
+}
+
+.card-test {
+    height: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+svg {
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    transition: 0.5s ease;
+}
+
+.scaled {
+    scale: 3;
+}
+
+.centered {
+    position: fixed;
+    top: -400%;
+    left: 30%;
+    z-index: 1000;
+}
+
+.cards-container-test {
+    display: flex;
+    justify-content: center;
+    gap: 5%;
+    height: 45%;
+    scale: 0.5;
 }
 
 .animate__animated.player1 {
@@ -94,14 +128,14 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-around;
-    width: 60%;
+    width: 100%;
 }
 
 .results-card {
     border: 5px solid white;
     border-radius: 13px;
-    height: 260px;
-    width: 184px;
+    width: 150px;
+    height: 210px;
 }
 
 .results-card img {
