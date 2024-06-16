@@ -8,17 +8,27 @@
 }
 
 .player-container {
+    height: 50%;
+    display: flex;
+    flex-direction: column;
+}
+
+.player-container .playersDices {
     height: 40%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .player2-container {
     height: 20%;
     display: flex;
     flex-direction: column-reverse;
+    justify-content: center;
 }
 
 .results-container {
-    height: 40%;
+    height: 25%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -31,11 +41,11 @@
 
 .results-container img.show {
     display: block;
-    width: 140px;
+    width: 125px;
 }
 
 .playersDices {
-    height: 35%;
+    height: 40%;
 }
 
 .card-test {
@@ -45,11 +55,11 @@
     align-items: center;
 }
 
-svg {
+.cards-container-test img {
     position: relative;
     z-index: 1;
     cursor: pointer;
-    transition: 0.5s ease;
+    transition: 0.5s ease-out;
 }
 
 .scaled {
@@ -57,18 +67,19 @@ svg {
 }
 
 .centered {
-    position: fixed;
+    position: fixed !important;
     top: -400%;
     left: 30%;
-    z-index: 1000;
+    z-index: 1000 !important;
 }
 
 .cards-container-test {
     display: flex;
     justify-content: center;
     gap: 5%;
-    height: 45%;
+    height: 40%;
     scale: 0.5;
+    align-items: center;
 }
 
 .animate__animated.player1 {
@@ -89,14 +100,15 @@ svg {
 }
 
 .battle-dices-inputs {
-    height: 20%;
+    height: 0%;
 }
 
 .battle-dices-inputs.player1 {
     display: flex;
     flex-direction: row;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    height: 30%;
 }
 
 .player2 .battle-dices-inputs {
@@ -132,10 +144,10 @@ svg {
 }
 
 .results-card {
-    border: 5px solid white;
+    border: 3px solid white;
     border-radius: 13px;
-    width: 150px;
-    height: 210px;
+    width: 130px;
+    height: 183px;
 }
 
 .results-card img {
@@ -168,6 +180,11 @@ svg {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.round-counter button {
+    z-index: 999;
+    position: relative;
 }
 
 .cards-modal-button-container {
@@ -210,8 +227,8 @@ svg {
     position: absolute;
     top: 0;
     z-index: 2;
-    height: 60px;
-    width: 60px;
+    height: 45px;
+    width: 45px;
     border-radius: 7px;
     animation: 2s burn-grow linear;
     background-color: rgb(30 30 30 / 50%);
@@ -233,10 +250,10 @@ svg {
     }
 
     60% {
-        height: 30px;
-        width: 30px;
-        top: calc(50% - 15px);
-        right: calc(50% - 15px);
+        height: 22px;
+        width: 22px;
+        top: calc(50% - 12px);
+        right: calc(50% - 12px);
         border: 3px solid #FFFB5C;
         -webkit-box-shadow: inset 0px 0px 6px 2px #FFFB5C, inset 0px 0px 5px 6px rgba(243, 108, 0, 0.5), 0px 0px 6px 2px #FFFB5C, 0px 0px 15px 10px rgba(241, 124, 4, 0.6), 0px 0px 8px 11px #1c0901eb, inset 0px 0px 29px 22px #c4720f42;
         -moz-box-shadow: inset 0px 0px 6px 2px #FFFB5C, inset 0px 0px 5px 6px rgba(243, 108, 0, 0.5), 0px 0px 6px 2px #FFFB5C, 0px 0px 15px 10px rgba(241, 124, 4, 0.6), 0px 0px 8px 11px #1c0901eb, inset 0px 0px 29px 22px #c4720f42;
@@ -254,10 +271,10 @@ svg {
 
     90% {
         opacity: 1;
-        height: 60px;
-        width: 60px;
-        top: calc(50% - 30px);
-        right: calc(50% - 30px);
+        height: 45px;
+        width: 45px;
+        top: calc(50% - 23px);
+        right: calc(50% - 23px);
         background-color: rgb(30 30 30 / 50%);
         box-shadow: inset 0px 0px 6px 2px #fffb5c00, inset 0px 0px 12px 1px rgb(52, 21, 0), 0px 0px 0px 0px #3f1c0100, 0px 0px 0px 0px rgba(105, 46, 0, 0), 0px 0px 0px 0px #401d02eb, inset 0px 0px 29px 22px #c4720f00;
     }
