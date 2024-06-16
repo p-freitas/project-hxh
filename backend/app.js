@@ -236,6 +236,29 @@ const generateRandomNumber = () => {
   return Math.floor(Math.random() * (30 - 6 + 1)) + 6;
 };
 
+const pickRandomCards = (cards, numPicks) => {
+  const result = [];
+  const availableCards = [];
+
+  // Create an array of cardCodes based on their quantities
+  cards.forEach((card) => {
+    for (let i = 0; i < card.quantity; i++) {
+      availableCards.push(card.cardCode);
+    }
+  });
+
+  for (let i = 0; i < numPicks; i++) {
+    if (availableCards.length === 0) break;
+    const randomIndex = Math.floor(Math.random() * availableCards.length);
+    const pickedCardCode = availableCards[randomIndex];
+
+    result.push(pickedCardCode);
+    availableCards.splice(randomIndex, 1); // Remove the picked card to avoid duplicates
+  }
+
+  return result;
+};
+
 // Socket.io connection handling
 io.on("connection", (socket) => {
   console.log(`A user connected with id: ${socket.id}`);
@@ -634,6 +657,13 @@ io.on("connection", (socket) => {
   socket.on("getSelectedRandomNumber", (gameId) => {
     const room = rooms.get(gameId);
     socket.emit("setSelectedRandomNumber", room?.selectedRandomNumber);
+  });
+
+  socket.on("pickPlayersCard", (cardsArray) => {
+    console.log("cardsArray::", cardsArray);
+    const pickedCards = pickRandomCards(cardsArray, 4);
+    console.log("pickedCards::", pickedCards);
+    socket.emit("pickedCards", pickedCards);
   });
 });
 
