@@ -220,24 +220,29 @@
 }
 
 .roundNumber {
-    position: fixed;
-    right: 20px;
-    top: -8px
+    position: absolute;
+    right: -10px;
+    top: 0px;
+    margin: 0;
 }
 
 .round-selected-number {
-    position: fixed;
-    left: 46%;
-    top: -32px;
+    position: absolute;
+    left: 52%;
+    top: 0px;
     font-size: 38px;
     font-weight: bold;
 }
 
+.round-selected-number p {
+    margin: 0;
+}
+
 .exit-button-container {
     width: 100px;
-    position: fixed;
+    position: absolute;
     top: 10px;
-    left: -16px;
+    left: 10px;
 }
 
 .dimmed {
@@ -1360,7 +1365,7 @@
 .timer-container {
     display: flex;
     justify-content: center;
-    position: fixed;
-    bottom: 4%;
-    right: 30px;
+    position: absolute;
+    bottom: -92vh;
+    right: 10px;
 }

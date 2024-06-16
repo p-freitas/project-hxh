@@ -1,9 +1,9 @@
 .points-counter-container {
     display: flex;
     justify-content: space-between;
-    position: fixed;
-    right: 5px;
-    top: 42px;
+    position: absolute;
+    right: -10px;
+    top: 40px;
 }
 
 .points-counter.winner {
