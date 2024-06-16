@@ -114,8 +114,6 @@ const Battle = ({ socket }: any) => {
   const [scaled, setScaled] = useState(false);
   const [cardClickedIndex, setCardClickedIndex] = useState<number>();
 
-  console.log("pickedCards::", pickedCards);
-
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
     cardId: any
@@ -807,28 +805,28 @@ const Battle = ({ socket }: any) => {
   return (
     <div className="battle-container">
       <div className="round-counter">
-        <div style={{ width: "100px" }}>
+        <div className="exit-button-container">
           <button onClick={handleLeaveRoom}>Sair</button>
         </div>
-        <div>
-          <h2>Round {roundNumber}/7</h2>
-          <PointsCounter
-            roundNumber={roundNumber}
-            pointsColor={[
-              point1Color,
-              point2Color,
-              point3Color,
-              point4Color,
-              point5Color,
-              point6Color,
-              point7Color,
-            ]}
-          />
-          {seconds <= 30 && showTimer && (
-            <div className="timer-container">
-              <CircularProgressBar seconds={seconds} />
-            </div>
-          )}
+        <h2 className="roundNumber">{roundNumber}/7</h2>
+        <PointsCounter
+          roundNumber={roundNumber}
+          pointsColor={[
+            point1Color,
+            point2Color,
+            point3Color,
+            point4Color,
+            point5Color,
+            point6Color,
+            point7Color,
+          ]}
+        />
+        {
+          <div className="timer-container">
+            <CircularProgressBar seconds={seconds} />
+          </div>
+        }
+        <div className="round-selected-number">
           <p>{roundSelectedNumber}</p>
         </div>
       </div>

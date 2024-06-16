@@ -219,6 +219,27 @@
     font-size: 18px;
 }
 
+.roundNumber {
+    position: fixed;
+    right: 20px;
+    top: -8px
+}
+
+.round-selected-number {
+    position: fixed;
+    left: 46%;
+    top: -32px;
+    font-size: 38px;
+    font-weight: bold;
+}
+
+.exit-button-container {
+    width: 100px;
+    position: fixed;
+    top: 10px;
+    left: -16px;
+}
+
 .dimmed {
     opacity: 1;
 }
@@ -1339,5 +1360,7 @@
 .timer-container {
     display: flex;
     justify-content: center;
-    margin-top: 15px;
+    position: fixed;
+    bottom: 4%;
+    right: 30px;
 }
