@@ -228,10 +228,12 @@
 
 .round-selected-number {
     position: absolute;
-    left: 52%;
+    left: 50%;
     top: 0px;
     font-size: 38px;
     font-weight: bold;
+    border: 1px solid;
+    padding: 2px 5px;
 }
 
 .round-selected-number p {
@@ -1366,6 +1368,7 @@
     display: flex;
     justify-content: center;
     position: absolute;
-    bottom: -92vh;
-    right: 10px;
+    bottom: 25px;
+    right: 25px;
+    scale: 0.8;
 }

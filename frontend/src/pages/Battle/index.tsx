@@ -10,6 +10,7 @@ import { useAxios } from "../../context/AxiosContext";
 import CardContainer from "./styles";
 import CircularProgressBar from "../../components/CircularProgressBar";
 import { ReactComponent as MyIcon } from "../../assets/images/battle-pack.svg";
+import SlotCounter from "react-slot-counter";
 
 type RoundResult = {
   id: string;
@@ -103,16 +104,18 @@ const Battle = ({ socket }: any) => {
   const [showPack, setShowPack] = useState<boolean>(false);
   const [showStoledCard, setShowStoledCard] = useState<boolean>(false);
   const [roundAlreadyPlayed, setRoundAlreadyPlayed] = useState<boolean>(false);
-  const [seconds, setSeconds] = useState<number>(60000);
+  const [seconds, setSeconds] = useState<number>(600000);
   const [showTimer, setShowTimer] = useState<boolean>(true);
   const [isClosingModal, setIsClosingModal] = useState(false);
   const [inactiveCounter, setInactiveCounter] = useState<number>(0);
-  const [roundSelectedNumber, setRoundSelectedNumber] = useState<number>();
+  const [roundSelectedNumber, setRoundSelectedNumber] = useState<number>(0);
   const [pickedCards, setPickedCards] = useState<string[]>();
   const [dragStart, setDragStart] = useState<number>();
   const [startDrag, setStartDrag] = useState<boolean>(true);
   const [scaled, setScaled] = useState(false);
   const [cardClickedIndex, setCardClickedIndex] = useState<number>();
+
+  console.log("roundSelectedNumber::", roundSelectedNumber);
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -165,7 +168,6 @@ const Battle = ({ socket }: any) => {
 
       if (response.status === 200) {
         setPlayerCard(response.data.cards);
-        socket.emit("pickPlayersCard", response.data.cards);
       }
     } catch (error) {
       console.error("Error sending request:", error);
@@ -174,16 +176,13 @@ const Battle = ({ socket }: any) => {
 
   useEffect(() => {
     getPlayerCards();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
     socket.emit("joinGameAgain", location.pathname.split("/")[2], userId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
     socket.emit("getSelectedRandomNumber", location.pathname.split("/")[2]);
+    socket.emit(
+      "getPickedPlayersCard",
+      location.pathname.split("/")[2],
+      userId
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -199,6 +198,8 @@ const Battle = ({ socket }: any) => {
 
   useEffect(() => {
     socket.on("pickedCards", (cards: string[]) => {
+      console.log("cards::", cards);
+
       setPickedCards(cards);
     });
 
@@ -597,10 +598,6 @@ const Battle = ({ socket }: any) => {
     socket.on("timer", (timer: any) => {
       setSeconds(timer);
     });
-
-    return () => {
-      socket.off("timer");
-    };
   }, [socket]);
 
   useEffect(() => {
@@ -808,7 +805,7 @@ const Battle = ({ socket }: any) => {
         <div className="exit-button-container">
           <button onClick={handleLeaveRoom}>Sair</button>
         </div>
-        <h2 className="roundNumber">{roundNumber}/7</h2>
+        <h2 className="roundNumber">{roundNumber} / 7</h2>
         <PointsCounter
           roundNumber={roundNumber}
           pointsColor={[
@@ -821,15 +818,27 @@ const Battle = ({ socket }: any) => {
             point7Color,
           ]}
         />
-        {
-          <div className="timer-container">
-            <CircularProgressBar seconds={seconds} />
-          </div>
-        }
+
         <div className="round-selected-number">
-          <p>{roundSelectedNumber}</p>
+          <SlotCounter
+            value={roundSelectedNumber}
+            animateOnVisible={{
+              triggerOnce: false,
+              rootMargin: "0px 0px -100px 0px",
+            }}
+            dummyCharacterCount={20}
+            duration={2}
+            startValue={"00"}
+            useMonospaceWidth
+            direction="top-down"
+          />
         </div>
       </div>
+      {seconds <= 30 && showTimer && (
+        <div className="timer-container">
+          <CircularProgressBar seconds={seconds} />
+        </div>
+      )}
       {!battleResult ? (
         <>
           <div className="player2-container">
@@ -907,14 +916,6 @@ const Battle = ({ socket }: any) => {
                 pickedCards.map((cardCode, index) => {
                   return (
                     <motion.div
-                      onHoverStart={() => {
-                        const myComponent = document.getElementById(
-                          `card-container-${index}`
-                        );
-                        //@ts-ignore
-                        myComponent.style.boxShadow =
-                          "0px 0px 20px 5px rgb(0 225 255)";
-                      }}
                       // whileTap={{ scale: 2, zIndex: 999 }}
                       className={`card-test-${index}`}
                       drag={startDrag}

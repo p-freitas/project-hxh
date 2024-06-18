@@ -161,7 +161,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
                 >
                   <img
                     className="btn"
-                    src={require(`../../assets/images/${pack.packType}-pack2.svg`)}
+                    src={require(`../../assets/images/${pack.packType}-pack.svg`)}
                     alt=""
                   />
                 </a>
