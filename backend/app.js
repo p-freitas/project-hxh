@@ -255,29 +255,6 @@ const generateRandomNumber = () => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-const pickRandomCards = (cards, numPicks) => {
-  const result = [];
-  const availableCards = [];
-
-  // Create an array of cardCodes based on their quantities
-  cards?.forEach((card) => {
-    for (let i = 0; i < card.quantity; i++) {
-      availableCards.push(card.cardCode);
-    }
-  });
-
-  for (let i = 0; i < numPicks; i++) {
-    if (availableCards.length === 0) break;
-    const randomIndex = Math.floor(Math.random() * availableCards.length);
-    const pickedCardCode = availableCards[randomIndex];
-
-    result.push(pickedCardCode);
-    availableCards.splice(randomIndex, 1); // Remove the picked card to avoid duplicates
-  }
-  console.log("result::", result);
-  return result;
-};
-
 // Socket.io connection handling
 io.on("connection", (socket) => {
   console.log(`A user connected with id: ${socket.id}`);
@@ -314,7 +291,7 @@ io.on("connection", (socket) => {
     );
   });
 
-  socket.on("createGame", async (gameId, userId) => {
+  socket.on("createGame", async (gameId, userId, selectedCardsArray) => {
     rooms.set(gameId, {
       id: gameId,
       players: [
@@ -322,7 +299,7 @@ io.on("connection", (socket) => {
           id: userId,
           isReady: false,
           playerReadyFinishBattle: false,
-          cards: pickRandomCards(await getUserCards(userId), 4),
+          cards: selectedCardsArray,
           dices: [],
           socketId: socket.id,
         },
@@ -337,7 +314,7 @@ io.on("connection", (socket) => {
     roomsAvaiable = roomsAvaiable.filter((item) => item.gameId !== gameId);
   });
 
-  socket.on("joinGame", async (gameId, userId) => {
+  socket.on("joinGame", async (gameId, userId, selectedCardsArray) => {
     socket.join(gameId);
     const room = rooms.get(gameId);
     const playerExists = room?.players?.some((player) => player.id === userId);
@@ -347,7 +324,7 @@ io.on("connection", (socket) => {
         id: userId,
         isReady: false,
         playerReadyFinishBattle: false,
-        cards: pickRandomCards(await getUserCards(userId), 4),
+        cards: selectedCardsArray,
         dices: [],
         socketId: socket.id,
       });
@@ -684,8 +661,6 @@ io.on("connection", (socket) => {
     const room = rooms.get(gameId);
 
     const playerIndex = room?.players?.findIndex((obj) => obj.id === userId);
-
-    console.log("room?.players::", room?.players);
 
     socket.emit("pickedCards", room?.players[playerIndex]?.cards);
   });
