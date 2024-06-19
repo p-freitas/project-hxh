@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "animate.css";
 import "./styles.css";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import CardContainer from "./styles";
 
 type CardSelectedType = {
@@ -40,12 +41,12 @@ const CardsSelectionModal: React.FC<ModalProps> = ({
   const [selectedCard2, setSelectedCard2] = useState<CardSelectedType>();
   const [selectedCard3, setSelectedCard3] = useState<CardSelectedType>();
   const [selectedCard4, setSelectedCard4] = useState<CardSelectedType>();
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-      setIsClosing(false);
-    }, 500);
+
+  const hapticsImpactMedium = async () => {
+    const canVibrate = "vibrate" in navigator;
+    if (canVibrate) {
+      await Haptics.impact({ style: ImpactStyle.Medium });
+    }
   };
 
   useEffect(() => {
@@ -104,7 +105,8 @@ const CardsSelectionModal: React.FC<ModalProps> = ({
     }
   };
 
-  const handleCardClick = (card: CardSelectedType, index: number) => {
+  const handleCardClick = async (card: CardSelectedType, index: number) => {
+    await hapticsImpactMedium();
     if (heldBox) {
       setHeldBox(null);
     } else {
@@ -348,9 +350,6 @@ const CardsSelectionModal: React.FC<ModalProps> = ({
             {watingPlayersMessagem ? "Cancelar" : "Jogar"}
           </button>
         </div>
-        <span className="close" onClick={handleClose}>
-          &times;
-        </span>
       </div>
     </div>
   );
