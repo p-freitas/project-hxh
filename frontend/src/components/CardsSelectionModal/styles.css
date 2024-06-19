@@ -1,0 +1,94 @@
+.modal {
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    align-content: center;
+}
+
+.modal.open {
+    display: block;
+}
+
+.modal-content {
+    background-color: #7902ff3d;
+    margin: 0 auto;
+    padding: 15px;
+    border: 3px solid black;
+    width: 90%;
+    /* height: 40%; */
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-top: 50px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    right: 12%;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+}
+
+.animate__animated.animate__bounceInUp {
+    --animate-duration: 0.5s;
+}
+
+.closing {
+    animation: ease-out 0.3s;
+}
+
+.card-selection-modal-slots-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 50px;
+}
+
+.card-selection-modal-slot {
+    width: 80px;
+    height: 105px;
+    border: 2px solid white;
+}
+
+.card-selection-modal-card {
+    width: 75px;
+    height: 100px;
+}
+
+.card-selection-modal-cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    overflow-y: auto;
+    max-height: 50vh;
+    padding: 10px;
+    will-change: auto;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-text-size-adjust: none;
+}
+
+.box.held {
+    will-change: auto;
+    transition: transform 0.5s ease-out, top 0.5s ease-out, left 0.5s ease-out;
+    position: fixed !important;
+    transform: translate(-50%, -100%) scale(4) !important;
+    top: 50%;
+    left: 50%;
+    z-index: 1000 !important;
+}

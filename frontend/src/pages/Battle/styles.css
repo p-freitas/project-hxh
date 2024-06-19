@@ -55,31 +55,30 @@
     align-items: center;
 }
 
-.cards-container-test img {
+.card {
     position: relative;
     z-index: 1;
     cursor: pointer;
-    transition: 0.5s ease-out;
-}
-
-.scaled {
-    scale: 3;
+    transition: transform 0.5s ease-out, top 0.5s ease-out, left 0.5s ease-out;
+    transform: scale(1);
 }
 
 .centered {
     position: fixed !important;
-    top: -400%;
-    left: 30%;
+    transform: translate(-50%, -300%) scale(3) !important;
+    top: 50%;
+    left: 50%;
     z-index: 1000 !important;
 }
 
 .cards-container-test {
+    will-change: transform;
     display: flex;
     justify-content: center;
     gap: 5%;
     height: 40%;
-    scale: 0.5;
     align-items: center;
+    transform: scale(0.5);
 }
 
 .animate__animated.player1 {

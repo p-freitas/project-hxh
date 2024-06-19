@@ -8,6 +8,7 @@ import PackOpening from "../../components/PackOpening";
 import CardsModal from "../../components/CardsModal";
 import CardContainer from "../Battle/styles";
 import { motion } from "framer-motion";
+import CardsSelectionModal from "../../components/CardsSelectionModal";
 
 type packsType = {
   packType: string;
@@ -21,7 +22,7 @@ type UserPacksType = {
 
 type CardSelectedType = {
   cardCode: string;
-  quantity?: string;
+  quantity: number;
   index: number;
 };
 
@@ -40,6 +41,9 @@ const Lobby = ({ socket }: any) => {
   const [playerCards, setPlayerCard] = useState<CardSelectedType[]>();
   const [animated, setAnimated] = useState<boolean>(false);
   const [isClosingModal, setIsClosingModal] = useState(false);
+  const [openCardSeletionModal, setOpenCardSeletionModal] = useState(false);
+  const [selectedCardsArray, setSelectedCardsArray] =
+    useState<CardSelectedType[]>();
 
   const validateToken = async () => {
     try {
@@ -161,7 +165,7 @@ const Lobby = ({ socket }: any) => {
   useEffect(() => {
     socket.on("joinExistingGame", (gameId: string) => {
       try {
-        socket.emit("createGame", gameId, userId);
+        socket.emit("createGame", gameId, userId, selectedCardsArray);
       } catch (error) {
         console.error(error);
       }
@@ -170,17 +174,17 @@ const Lobby = ({ socket }: any) => {
     return () => {
       socket.off("joinExistingGame");
     };
-  }, [socket, userId]);
+  }, [selectedCardsArray, socket, userId]);
 
   useEffect(() => {
     socket.on("gameCreated", (gameId: string) => {
-      socket.emit("joinGame", gameId, userId);
+      socket.emit("joinGame", gameId, userId, selectedCardsArray);
     });
 
     return () => {
       socket.off("gameCreated");
     };
-  }, [socket, userId]);
+  }, [selectedCardsArray, socket, userId]);
 
   useEffect(() => {
     socket.on("joinedGame", (gameId: string) => {
@@ -232,7 +236,10 @@ const Lobby = ({ socket }: any) => {
 
   return (
     <div className="lobby-container">
-      <button onClick={handleNewGame} disabled={playButtonDisabled}>
+      <button
+        onClick={() => setOpenCardSeletionModal(true)}
+        disabled={playButtonDisabled}
+      >
         Play
       </button>
       {userPacks && (
@@ -259,6 +266,20 @@ const Lobby = ({ socket }: any) => {
         />
       )}
 
+      <CardsSelectionModal
+        isOpen={openCardSeletionModal}
+        onClose={() => setOpenCardSeletionModal(false)}
+        isClosing={isClosingModal}
+        setIsClosing={setIsClosingModal}
+        playerCards={playerCards}
+        setPlayerCard={setPlayerCard}
+        selectedCardsArray={selectedCardsArray}
+        setSelectedCardsArray={setSelectedCardsArray}
+        handleNewGame={handleNewGame}
+        watingPlayersMessagem={watingPlayersMessagem}
+        cancelMatchMaking={cancelMatchMaking}
+      />
+
       <CardsModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
@@ -270,7 +291,7 @@ const Lobby = ({ socket }: any) => {
             <h1>Sem cartas</h1>
           ) : (
             playerCards?.map((card, index) => (
-              <CardContainer content={card.quantity} key={index}>
+              <CardContainer content={`${card.quantity}`} key={index}>
                 <div
                   onMouseMove={(e) => handleMouseMove(e, `card-${index}`)}
                   onMouseOut={() => handleMouseOut(`card-${index}`)}

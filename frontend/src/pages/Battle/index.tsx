@@ -109,13 +109,11 @@ const Battle = ({ socket }: any) => {
   const [isClosingModal, setIsClosingModal] = useState(false);
   const [inactiveCounter, setInactiveCounter] = useState<number>(0);
   const [roundSelectedNumber, setRoundSelectedNumber] = useState<number>(0);
-  const [pickedCards, setPickedCards] = useState<string[]>();
+  const [pickedCards, setPickedCards] = useState<CardSelectedType[]>();
   const [dragStart, setDragStart] = useState<number>();
   const [startDrag, setStartDrag] = useState<boolean>(true);
   const [scaled, setScaled] = useState(false);
   const [cardClickedIndex, setCardClickedIndex] = useState<number>();
-
-  console.log("roundSelectedNumber::", roundSelectedNumber);
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -197,9 +195,7 @@ const Battle = ({ socket }: any) => {
   }, [socket]);
 
   useEffect(() => {
-    socket.on("pickedCards", (cards: string[]) => {
-      console.log("cards::", cards);
-
+    socket.on("pickedCards", (cards: CardSelectedType[]) => {
       setPickedCards(cards);
     });
 
@@ -913,53 +909,57 @@ const Battle = ({ socket }: any) => {
             </div>
             <div className="cards-container-test">
               {pickedCards &&
-                pickedCards.map((cardCode, index) => {
+                pickedCards.map((card, index) => {
                   return (
-                    <motion.div
-                      // whileTap={{ scale: 2, zIndex: 999 }}
-                      className={`card-test-${index}`}
-                      drag={startDrag}
-                      dragSnapToOrigin
-                      whileDrag={{ scale: 2, zIndex: 999 }}
-                      onDrag={(event, info) => {
-                        if (
-                          dragStart &&
-                          dragStart - info.point.y >= 150 &&
-                          !disableCards &&
-                          !cardPlayed
-                        ) {
-                          // @ts-ignore
-                          document.querySelector("body").style.background =
-                            "linear-gradient(180deg, #9c1aff6b 0%, rgb(119, 0, 255) 100%)";
-                        } else {
-                          // @ts-ignore
-                          document.querySelector("body").style.background =
-                            "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
-                        }
-                      }}
-                      onDragStart={(event, info) => {
-                        setCardSelected({
-                          cardCode: cardCode,
-                          index: index,
-                        });
-                        setDragStart(info.point.y);
-                      }}
-                      onDragEnd={(event, info) => {
-                        handleOnDragEnd(info, index);
-                      }}
-                    >
-                      <img
-                        src={require(`../../assets/images/${cardCode}.svg`)}
-                        alt="carta"
-                        id="card"
-                        className={`${
-                          cardClickedIndex === index && scaled
-                            ? "scaled centered"
-                            : ""
-                        } card card-content animate__animated animate__bounceInRight`}
-                        onClick={() => handleCardClick(index)}
-                      />
-                    </motion.div>
+                    card !== undefined && (
+                      <motion.div
+                        // whileTap={{ scale: 2, zIndex: 999 }}
+                        className={`card-test-${index}`}
+                        drag={startDrag}
+                        dragSnapToOrigin
+                        whileDrag={{ scale: 2, zIndex: 999 }}
+                        onDrag={(event, info) => {
+                          if (
+                            dragStart &&
+                            dragStart - info.point.y >= 150 &&
+                            !disableCards &&
+                            !cardPlayed
+                          ) {
+                            // @ts-ignore
+                            document.querySelector("body").style.background =
+                              "linear-gradient(180deg, #9c1aff6b 0%, rgb(119, 0, 255) 100%)";
+                          } else {
+                            // @ts-ignore
+                            document.querySelector("body").style.background =
+                              "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
+                          }
+                        }}
+                        onDragStart={(event, info) => {
+                          setCardSelected({
+                            cardCode: card?.cardCode,
+                            index: index,
+                          });
+                          setDragStart(info.point.y);
+                        }}
+                        onDragEnd={(event, info) => {
+                          handleOnDragEnd(info, index);
+                        }}
+                      >
+                        {card && (
+                          <img
+                            src={require(`../../assets/images/${card?.cardCode}.svg`)}
+                            alt="carta"
+                            id="card"
+                            className={`${
+                              cardClickedIndex === index && scaled
+                                ? "centered scaled"
+                                : ""
+                            } card card-content animate__bounceInRight`}
+                            onClick={() => handleCardClick(index)}
+                          />
+                        )}
+                      </motion.div>
+                    )
                   );
                 })}
             </div>

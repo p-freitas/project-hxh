@@ -680,6 +680,7 @@ li.active {
     -webkit-transform: scale(1);
     transform: scale(1);
     z-index: 9999;
+    will-change: auto;
 }
 
 .loaded .loader {
