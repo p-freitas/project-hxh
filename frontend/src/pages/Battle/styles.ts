@@ -13,13 +13,14 @@ const CardContainer = styled.div<CardContainerProps>`
       height: 25px;
       background-color: red;
       position: relative;
-      top: -260px;
-      left: 150px;
+      top: -275px;
+      left: 160px;
       border-radius: 50%;
       align-items: center;
       justify-content: center;
       color: white;
       font-size: 18px;
+      z-index: 999;
     }
   }
 `;

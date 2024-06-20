@@ -71,12 +71,10 @@ ul li a {
 #pack-standard {
     overflow: auto;
     display: flex;
+    max-height: 75vh;
+    flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
-}
-
-#pack-standard a {
-    margin: 50px;
 }
 
 #pack-standard IMG:hover {

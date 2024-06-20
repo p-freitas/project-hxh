@@ -6,3 +6,10 @@ form {
     height: 100vh;
     justify-content: center;
 }
+
+.login-page-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

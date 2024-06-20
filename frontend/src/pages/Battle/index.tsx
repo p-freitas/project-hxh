@@ -1002,7 +1002,7 @@ const Battle = ({ socket }: any) => {
           </div>
         </>
       ) : (
-        <div>
+        <div className="battle-results-container">
           {showPack && (
             <div
               style={{
@@ -1030,7 +1030,7 @@ const Battle = ({ socket }: any) => {
             </div>
           )}
 
-          <div>
+          <div className="battle-results-title-container">
             <h1>Resultado da batalha:</h1>
           </div>
           {battleResult.draw ? (
@@ -1049,7 +1049,7 @@ const Battle = ({ socket }: any) => {
                     : "Você perdeu :("}
                 </h1>
               </div>
-              <div>
+              <div className="battle-results-buttons-container">
                 {battleResult.winner === userId ? (
                   <>
                     <button

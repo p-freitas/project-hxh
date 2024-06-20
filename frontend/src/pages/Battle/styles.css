@@ -167,7 +167,7 @@
 }
 
 .player-card-container {
-    margin: 55px 55px 0 0;
+    margin: 55px 0px 0 0;
     width: fit-content !important;
     height: fit-content;
 }
@@ -1370,4 +1370,21 @@
     bottom: 25px;
     right: 25px;
     scale: 0.8;
+}
+
+.battle-results-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.battle-results-buttons-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.battle-results-title-container {
+    margin-top: 50%;
 }
