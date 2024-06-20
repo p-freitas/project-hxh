@@ -14,10 +14,11 @@ const packSchema = new Schema({
 
 const userSchema = new Schema(
   {
+    googleId: { type: String, unique: true, required: false },
     userId: { type: String, unique: true, required: true },
     email: { type: String, required: true, unique: true },
     userName: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
     active: { type: Boolean, default: false },
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },

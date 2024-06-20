@@ -2,10 +2,14 @@ const Joi = require("joi");
 require("dotenv").config();
 const { v4: uuid } = require("uuid");
 const jwt = require("jsonwebtoken");
+const passport = require("passport");
+const { OAuth2Client } = require("google-auth-library");
 
 const { generateJwt } = require("./helpers/generateJwt");
 const { sendEmail } = require("./helpers/mailer");
+
 const User = require("./user.model");
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 //Validate user schema
 const userSchema = Joi.object().keys({
@@ -412,3 +416,67 @@ exports.ValidateToken = async (req, res) => {
     error: false,
   });
 };
+
+// Google Auth
+exports.googleAuth = async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    console.log("payload::", payload);
+
+    const user = await User.findOne({ email: payload.email });
+
+    if (!user) {
+      const id = uuid();
+      // If user doesn't exist, create a new user
+      const newUser = new User({
+        email: payload.email,
+        userId: id,
+        userName: payload.name.replace(" ", "-"),
+        googleId: payload.sub,
+        active: true, // since this is a Google user, we can consider the email verified
+      });
+      await newUser.save();
+    }
+
+    const { error, token: jwtToken } = await generateJwt(
+      user.userName,
+      user.userId
+    );
+
+    if (error) {
+      return res.status(500).json({
+        error: true,
+        message: "Couldn't create access token. Please try again later",
+      });
+    }
+
+    user.accessToken = jwtToken;
+    await user.save();
+
+    // Success
+    return res.status(200).json({
+      success: true,
+      message: "User logged in successfully",
+      accessToken: jwtToken,
+      userId: user.userId,
+      userName: user.userName,
+    });
+  } catch (error) {
+    console.error("Google authentication error", error);
+    return res.status(500).json({
+      error: true,
+      message: "Google authentication failed",
+    });
+  }
+};
+
+exports.googleAuthCallback = passport.authenticate("google", {
+  failureRedirect: "/",
+});

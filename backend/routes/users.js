@@ -24,4 +24,8 @@ router.get("/getUserPacks", validateToken, AuthController.GetUserPacks);
 
 router.get("/validateToken", validateToken, AuthController.ValidateToken);
 
+router.post("/auth/google", AuthController.googleAuth);
+
+router.get("/auth/google/callback", AuthController.googleAuthCallback);
+
 module.exports = router;
