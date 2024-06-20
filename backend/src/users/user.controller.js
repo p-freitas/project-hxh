@@ -4,9 +4,9 @@ const { v4: uuid } = require("uuid");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const { OAuth2Client } = require("google-auth-library");
-
 const { generateJwt } = require("./helpers/generateJwt");
 const { sendEmail } = require("./helpers/mailer");
+const { generateFromEmail } = require("unique-username-generator");
 
 const User = require("./user.model");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -66,26 +66,12 @@ exports.Signup = async (req, res) => {
     result.value.emailToken = code;
     result.value.emailTokenExpires = new Date(expiry);
 
-    //Check if referred and validate code.
-    if (result.value.hasOwnProperty("referrer")) {
-      let referrer = await User.findOne({
-        referralCode: result.value.referrer,
-      });
-      if (!referrer) {
-        return res.status(400).send({
-          error: true,
-          message: "Invalid referral code.",
-        });
-      }
-    }
-    result.value.referralCode = referralCode();
     const newUser = new User(result.value);
     await newUser.save();
 
     return res.status(200).json({
       success: true,
       message: "Registration Success",
-      referralCode: result.value.referralCode,
     });
   } catch (error) {
     console.error("signup-error", error);
@@ -432,42 +418,55 @@ exports.googleAuth = async (req, res) => {
 
     const user = await User.findOne({ email: payload.email });
 
+    // If user doesn't exist, create a new user
     if (!user) {
       const id = uuid();
-      // If user doesn't exist, create a new user
+      const username = generateFromEmail(payload.email, 3);
+      const { token: jwtToken } = await generateJwt(payload.email, id);
+
       const newUser = new User({
         email: payload.email,
         userId: id,
-        userName: payload.name.replace(" ", "-"),
+        userName: username,
         googleId: payload.sub,
+        accessToken: jwtToken,
         active: true, // since this is a Google user, we can consider the email verified
       });
       await newUser.save();
-    }
 
-    const { error, token: jwtToken } = await generateJwt(
-      user.userName,
-      user.userId
-    );
+      // Success
+      return res.status(200).json({
+        success: true,
+        message: "User logged in successfully",
+        accessToken: jwtToken,
+        userId: id,
+        userName: username,
+      });
+    } else {
+      const { error, token: jwtToken } = await generateJwt(
+        user.email,
+        user.userId
+      );
 
-    if (error) {
-      return res.status(500).json({
-        error: true,
-        message: "Couldn't create access token. Please try again later",
+      if (error) {
+        return res.status(500).json({
+          error: true,
+          message: "Couldn't create access token. Please try again later",
+        });
+      }
+
+      user.accessToken = jwtToken;
+      await user.save();
+
+      // Success
+      return res.status(200).json({
+        success: true,
+        message: "User logged in successfully",
+        accessToken: jwtToken,
+        userId: user.userId,
+        userName: user.userName,
       });
     }
-
-    user.accessToken = jwtToken;
-    await user.save();
-
-    // Success
-    return res.status(200).json({
-      success: true,
-      message: "User logged in successfully",
-      accessToken: jwtToken,
-      userId: user.userId,
-      userName: user.userName,
-    });
   } catch (error) {
     console.error("Google authentication error", error);
     return res.status(500).json({
