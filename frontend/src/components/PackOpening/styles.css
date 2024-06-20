@@ -136,7 +136,6 @@ ul li a {
     display: inline-block;
     position: relative;
     float: left;
-    margin-right: 15px;
     will-change: transform;
 }
 
@@ -189,7 +188,7 @@ li.active {
 }
 
 .pack-wrapper img.placeholder {
-    width: 220px;
+    width: 175px;
     opacity: 1;
 }
 
@@ -218,7 +217,7 @@ li.active {
 }
 
 .pack-wrapper .show img.card {
-    width: 220px;
+    width: 175px;
     position: absolute;
     top: 0;
     left: 0;
@@ -834,6 +833,7 @@ li.active {
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    padding: 0;
 }
 
 .close-packs-button-container {
@@ -842,4 +842,14 @@ li.active {
 
 .btn {
     cursor: pointer;
+}
+
+.pack-opened-container {
+    overflow: auto;
+    display: flex;
+    max-height: 75vh;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
 }

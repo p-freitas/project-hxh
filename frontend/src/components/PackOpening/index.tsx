@@ -198,7 +198,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
           <source src="http://delive.se/files/item.mp3"></source>
           Audio not supported.
         </audio> */}
-        <div>
+        <div className="pack-opened-container">
           {Array.from(
             { length: openAllPacks ? userPacks.total * 2 : 2 },
             (_, index) => (
