@@ -1,6 +1,5 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React, { useState } from "react";
-import { useRive } from "@rive-app/react-canvas";
 import RiveWrapper from "../../components/RiveWrapper";
 // import "animate.css";
 // import "./styles.css";
