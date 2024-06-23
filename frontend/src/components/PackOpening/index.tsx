@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useCallback, useState } from "react";
 import $ from "jquery";
 import "animate.css";
 import "./styles.css";
+import RiveWrapper from "../RiveWrapper";
 
 interface PackOpeningProps {
   userPacks: any;
@@ -58,16 +59,23 @@ const PackOpening: React.FC<PackOpeningProps> = ({
     handleOpenPacks(cards, openAll, packType);
   };
 
+  const [isHidden, setIsHidden] = useState(true);
+
   const handlePackClick = (openAll: boolean, packType: string) => {
-    randomRegular(1, 4, openAll, packType);
+    setIsHidden(false);
     $(".pack-standard-container").fadeOut(1000);
     $("#pack-standard").fadeOut(1500);
-    $(".pack-wrapper")
-      .delay(500)
-      .fadeIn(500)
-      .addClass("pack-wrapper-container");
+    setTimeout(() => {
+      setIsHidden(true);
+      randomRegular(1, 4, openAll, packType);
 
-    return false;
+      $(".pack-wrapper")
+        .delay(50)
+        .fadeIn(500)
+        .addClass("pack-wrapper-container");
+    }, 3000);
+
+    // return false;
   };
 
   const handleBodyClick = useCallback(() => {
@@ -120,7 +128,7 @@ const PackOpening: React.FC<PackOpeningProps> = ({
         showPackOpening ? "open" : ""
       } ${isClosing ? "animate__animated animate__bounceOut" : ""}`}
     >
-      <svg className="loader" viewBox="0 0 100 100" overflow="visible">
+      {/* <svg className="loader" viewBox="0 0 100 100" overflow="visible">
         <g className="core">
           <circle className="path" cx="50" cy="50" r="1" fill="none" />
         </g>
@@ -148,7 +156,8 @@ const PackOpening: React.FC<PackOpeningProps> = ({
         <g className="layer-8">
           <circle className="path" cx="50" cy="50" r="540" fill="none" />
         </g>
-      </svg>
+      </svg> */}
+      <div className="container">{!isHidden && <RiveWrapper />}</div>
       <div className="pack-standard-container">
         <div id="pack-standard" className="">
           {userPacks &&

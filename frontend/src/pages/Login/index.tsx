@@ -1,7 +1,9 @@
-// App.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
+import { Capacitor } from "@capacitor/core";
+
 import axios from "axios";
 import "./styles.css";
 
@@ -55,16 +57,50 @@ const Login = () => {
   //   console.error("Google login failed", errorResponse);
   // };
 
-  console.log("process. env. NODE_ENV::", process.env.NODE_ENV);
+  useEffect(() => {
+    if (Capacitor.getPlatform() === "android") {
+      GoogleAuth.initialize({
+        clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+        scopes: ["profile", "email"],
+        grantOfflineAccess: false,
+      });
+    }
+  }, []);
+
+  const handleLoginButton = async () => {
+    await GoogleAuth.signIn().then((response) => {
+      if (response) {
+        fetch(`${process.env.REACT_APP_API_BASE_URL}/users/auth/google`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token: response.authentication.idToken }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            sessionStorage.setItem("userId", data.userId);
+            sessionStorage.setItem("token", data.accessToken);
+            navigate("/");
+          })
+          .catch((error) => {
+            console.error("Error during Google login:", error);
+          });
+      }
+    });
+  };
 
   return (
     <div className="login-page-container">
+      {Capacitor.getPlatform() === "android" && (
+        <button onClick={handleLoginButton}>Login Android</button>
+      )}
+
       <GoogleLogin
         onSuccess={handleSuccess}
         onError={() => {
           console.log("Login Failed");
         }}
-        auto_select
       />
       {process.env.NODE_ENV === "development" && (
         <form onSubmit={handleSubmit}>

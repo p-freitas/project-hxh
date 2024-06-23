@@ -9,6 +9,7 @@ import CardsModal from "../../components/CardsModal";
 import CardContainer from "../Battle/styles";
 import { motion } from "framer-motion";
 import CardsSelectionModal from "../../components/CardsSelectionModal";
+import BackgroundAnimation from "../../components/BackgroundAnimation";
 
 type packsType = {
   packType: string;
@@ -235,113 +236,118 @@ const Lobby = ({ socket }: any) => {
   };
 
   return (
-    <div className="lobby-container">
-      <button
-        onClick={() => setOpenCardSeletionModal(true)}
-        disabled={playButtonDisabled}
-      >
-        Play
-      </button>
-      {userPacks && (
-        <button onClick={handlePackButtonClick} disabled={userPacks?.total < 1}>
-          {`Abrir pacotes (${userPacks?.total})`}
+    <BackgroundAnimation artboard="Artboard">
+      <div className="lobby-container">
+        <button
+          onClick={() => setOpenCardSeletionModal(true)}
+          disabled={playButtonDisabled}
+        >
+          Play
         </button>
-      )}
+        {userPacks && (
+          <button
+            onClick={handlePackButtonClick}
+            disabled={userPacks?.total < 1}
+          >
+            {`Abrir pacotes (${userPacks?.total})`}
+          </button>
+        )}
 
-      <button onClick={() => handleOpenModal()}>Cartas de batalha</button>
+        <button onClick={() => handleOpenModal()}>Cartas de batalha</button>
 
-      {watingPlayersMessagem && (
-        <>
-          <p>Aguardando jogadores...</p>
-          <button onClick={cancelMatchMaking}>Cancelar</button>
-        </>
-      )}
-      {showPackOpening && userPacks && (
-        <PackOpening
-          userPacks={userPacks}
-          setShowPackOpening={setShowPackOpening}
-          handleOpenPacks={handleOpenPacks}
-          showPackOpening={showPackOpening}
-          getUserPacks={getUserPacks}
+        {watingPlayersMessagem && (
+          <>
+            <p>Aguardando jogadores...</p>
+            <button onClick={cancelMatchMaking}>Cancelar</button>
+          </>
+        )}
+        {showPackOpening && userPacks && (
+          <PackOpening
+            userPacks={userPacks}
+            setShowPackOpening={setShowPackOpening}
+            handleOpenPacks={handleOpenPacks}
+            showPackOpening={showPackOpening}
+            getUserPacks={getUserPacks}
+          />
+        )}
+
+        <CardsSelectionModal
+          isOpen={openCardSeletionModal}
+          onClose={() => setOpenCardSeletionModal(false)}
+          isClosing={isClosingModal}
+          setIsClosing={setIsClosingModal}
+          playerCards={playerCards}
+          setPlayerCard={setPlayerCard}
+          selectedCardsArray={selectedCardsArray}
+          setSelectedCardsArray={setSelectedCardsArray}
+          handleNewGame={handleNewGame}
+          watingPlayersMessagem={watingPlayersMessagem}
+          cancelMatchMaking={cancelMatchMaking}
         />
-      )}
 
-      <CardsSelectionModal
-        isOpen={openCardSeletionModal}
-        onClose={() => setOpenCardSeletionModal(false)}
-        isClosing={isClosingModal}
-        setIsClosing={setIsClosingModal}
-        playerCards={playerCards}
-        setPlayerCard={setPlayerCard}
-        selectedCardsArray={selectedCardsArray}
-        setSelectedCardsArray={setSelectedCardsArray}
-        handleNewGame={handleNewGame}
-        watingPlayersMessagem={watingPlayersMessagem}
-        cancelMatchMaking={cancelMatchMaking}
-      />
-
-      <CardsModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        isClosing={isClosingModal}
-        setIsClosing={setIsClosingModal}
-      >
-        <div className="cards-container">
-          {playerCards?.length === 0 ? (
-            <h1>Sem cartas</h1>
-          ) : (
-            playerCards?.map((card, index) => (
-              <CardContainer content={`${card.quantity}`} key={index}>
-                <div
-                  onMouseMove={(e) => handleMouseMove(e, `card-${index}`)}
-                  onMouseOut={() => handleMouseOut(`card-${index}`)}
-                  className={
-                    animated
-                      ? "animated player-card-container"
-                      : " player-card-container"
-                  }
-                  id={`card-${index}`}
-                >
-                  <motion.div
-                    style={{
-                      boxShadow: "0px 0px 20px 0 rgb(0 0 0)",
-                    }}
-                    onHoverStart={() => {
-                      const myComponent = document.getElementById(
-                        `card-container-${card.cardCode}`
-                      );
-                      //@ts-ignore
-                      myComponent.style.boxShadow =
-                        "0px 0px 20px 5px rgb(0 225 255)";
-                    }}
-                    // @ts-ignore
-                    onMouseLeave={() => {
-                      const myComponent = document.getElementById(
-                        `card-container-${card.cardCode}`
-                      );
-
-                      //@ts-ignore
-                      return (myComponent.style.boxShadow =
-                        "0px 0px 20px 0 rgb(0 0 0)");
-                    }}
-                    className={`card-container demo animate__bounceIn lobby-card-container`}
-                    whileHover={{ scale: 1.5 }}
-                    id={`card-container-${card.cardCode}`}
+        <CardsModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          isClosing={isClosingModal}
+          setIsClosing={setIsClosingModal}
+        >
+          <div className="cards-container">
+            {playerCards?.length === 0 ? (
+              <h1>Sem cartas</h1>
+            ) : (
+              playerCards?.map((card, index) => (
+                <CardContainer content={`${card.quantity}`} key={index}>
+                  <div
+                    onMouseMove={(e) => handleMouseMove(e, `card-${index}`)}
+                    onMouseOut={() => handleMouseOut(`card-${index}`)}
+                    className={
+                      animated
+                        ? "animated player-card-container"
+                        : " player-card-container"
+                    }
+                    id={`card-${index}`}
                   >
-                    <img
-                      src={require(`../../assets/images/${card.cardCode}.svg`)}
-                      alt="carta"
-                      id="card"
-                      className="card card-content"
-                    />
-                  </motion.div>
-                </div>
-              </CardContainer>
-            ))
-          )}
-        </div>
-      </CardsModal>
-    </div>
+                    <motion.div
+                      style={{
+                        boxShadow: "0px 0px 20px 0 rgb(0 0 0)",
+                      }}
+                      onHoverStart={() => {
+                        const myComponent = document.getElementById(
+                          `card-container-${card.cardCode}`
+                        );
+                        //@ts-ignore
+                        myComponent.style.boxShadow =
+                          "0px 0px 20px 5px rgb(0 225 255)";
+                      }}
+                      // @ts-ignore
+                      onMouseLeave={() => {
+                        const myComponent = document.getElementById(
+                          `card-container-${card.cardCode}`
+                        );
+
+                        //@ts-ignore
+                        return (myComponent.style.boxShadow =
+                          "0px 0px 20px 0 rgb(0 0 0)");
+                      }}
+                      className={`card-container demo animate__bounceIn lobby-card-container`}
+                      whileHover={{ scale: 1.5 }}
+                      id={`card-container-${card.cardCode}`}
+                    >
+                      <img
+                        src={require(`../../assets/images/${card.cardCode}.svg`)}
+                        alt="carta"
+                        id="card"
+                        className="card card-content"
+                      />
+                    </motion.div>
+                  </div>
+                </CardContainer>
+              ))
+            )}
+          </div>
+        </CardsModal>
+      </div>
+    </BackgroundAnimation>
   );
 };
 

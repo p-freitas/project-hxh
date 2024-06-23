@@ -11,6 +11,7 @@ import CardContainer from "./styles";
 import CircularProgressBar from "../../components/CircularProgressBar";
 import { ReactComponent as MyIcon } from "../../assets/images/battle-pack.svg";
 import SlotCounter from "react-slot-counter";
+import BackgroundAnimation from "../../components/BackgroundAnimation";
 
 type RoundResult = {
   id: string;
@@ -796,471 +797,473 @@ const Battle = ({ socket }: any) => {
   };
 
   return (
-    <div className="battle-container">
-      <div className="round-counter">
-        <div className="exit-button-container">
-          <button onClick={handleLeaveRoom}>Sair</button>
-        </div>
-        <h2 className="roundNumber">{roundNumber} / 7</h2>
-        <PointsCounter
-          roundNumber={roundNumber}
-          pointsColor={[
-            point1Color,
-            point2Color,
-            point3Color,
-            point4Color,
-            point5Color,
-            point6Color,
-            point7Color,
-          ]}
-        />
-
-        <div className="round-selected-number">
-          <SlotCounter
-            value={roundSelectedNumber}
-            animateOnVisible={{
-              triggerOnce: false,
-              rootMargin: "0px 0px -100px 0px",
-            }}
-            dummyCharacterCount={20}
-            duration={2}
-            startValue={"00"}
-            useMonospaceWidth
-            direction="top-down"
+    <BackgroundAnimation artboard="Artboard 2">
+      <div className="battle-container">
+        <div className="round-counter">
+          <div className="exit-button-container">
+            <button onClick={handleLeaveRoom}>Sair</button>
+          </div>
+          <h2 className="roundNumber">{roundNumber} / 7</h2>
+          <PointsCounter
+            roundNumber={roundNumber}
+            pointsColor={[
+              point1Color,
+              point2Color,
+              point3Color,
+              point4Color,
+              point5Color,
+              point6Color,
+              point7Color,
+            ]}
           />
-        </div>
-      </div>
-      {seconds <= 30 && showTimer && (
-        <div className="timer-container">
-          <CircularProgressBar seconds={seconds} />
-        </div>
-      )}
-      {!battleResult ? (
-        <>
-          <div className="player2-container">
-            <div
-              className={`animate__animated playersDices player2-dices ${animationClassPlayer2} ${isDicesVisisbleClassPlayer2}`}
-              key={diceKey}
-            >
-              <ReactDice
-                dieSize={45}
-                rollTime={2}
-                defaultRoll={1}
-                numDice={player2DiceNumber}
-                ref={reactDicePlayer2}
-                disableIndividual
-                faceColor="#ffffff"
-                dotColor="#000000"
-                dieCornerRadius={8}
-                outline
-                rollDone={rollDonePlayer2}
-              />
-            </div>
-          </div>
 
-          <div className="results-container">
-            {roundResults && roundResults?.length > 0 && (
-              <div className="results-inner-container">
-                <div className="results-card">
-                  {oponentSelectedCard !== undefined && (
-                    <img
-                      src={require(`../../assets/images/${oponentSelectedCard}.svg`)}
-                      alt="carta"
-                      className={`scale-on-hover animate__backInDown ${hideCardPlayer2}`}
-                    />
-                  )}
-                </div>
-                <div className="results-score-container">
-                  <h1>{roundPlayer2Result}</h1>
-                  <h2>X</h2>
-                  <h1>{roundPlayer1Result}</h1>
-                </div>
-                <div className="results-card">
-                  {cardSelectedSent?.cardCode !== undefined && (
-                    <img
-                      src={require(`../../assets/images/${cardSelectedSent?.cardCode}.svg`)}
-                      alt="carta"
-                      className={`animate__backInUp scale-on-hover ${hideCard}`}
-                    />
-                  )}
-                </div>
+          <div className="round-selected-number">
+            <SlotCounter
+              value={roundSelectedNumber}
+              animateOnVisible={{
+                triggerOnce: false,
+                rootMargin: "0px 0px -100px 0px",
+              }}
+              dummyCharacterCount={20}
+              duration={2}
+              startValue={"00"}
+              useMonospaceWidth
+              direction="top-down"
+            />
+          </div>
+        </div>
+        {seconds <= 30 && showTimer && (
+          <div className="timer-container">
+            <CircularProgressBar seconds={seconds} />
+          </div>
+        )}
+        {!battleResult ? (
+          <>
+            <div className="player2-container">
+              <div
+                className={`animate__animated playersDices player2-dices ${animationClassPlayer2} ${isDicesVisisbleClassPlayer2}`}
+                key={diceKey}
+              >
+                <ReactDice
+                  dieSize={45}
+                  rollTime={2}
+                  defaultRoll={1}
+                  numDice={player2DiceNumber}
+                  ref={reactDicePlayer2}
+                  disableIndividual
+                  faceColor="#ffffff"
+                  dotColor="#000000"
+                  dieCornerRadius={8}
+                  outline
+                  rollDone={rollDonePlayer2}
+                />
               </div>
-            )}
-          </div>
-
-          <div className="player-container">
-            <div
-              className={`animate__animated playersDices player1-dices ${animationClassPlayer1} ${isDicesVisisbleClassPlayer1}`}
-              key={diceKey}
-            >
-              <ReactDice
-                dieSize={45}
-                rollTime={2}
-                defaultRoll={1}
-                numDice={numDiceComponent}
-                ref={reactDicePlayer1}
-                disableIndividual
-                faceColor="#ffffff"
-                dotColor="#000000"
-                dieCornerRadius={8}
-                outline
-                rollDone={rollDonePlayer1}
-              />
-            </div>
-            <div className="cards-container-test">
-              {pickedCards &&
-                pickedCards.map((card, index) => {
-                  return (
-                    card !== undefined && (
-                      <motion.div
-                        // whileTap={{ scale: 2, zIndex: 999 }}
-                        className={`card-test-${index}`}
-                        drag={startDrag}
-                        dragSnapToOrigin
-                        whileDrag={{ scale: 2, zIndex: 999 }}
-                        onDrag={(event, info) => {
-                          if (
-                            dragStart &&
-                            dragStart - info.point.y >= 150 &&
-                            !disableCards &&
-                            !cardPlayed
-                          ) {
-                            // @ts-ignore
-                            document.querySelector("body").style.background =
-                              "linear-gradient(180deg, #9c1aff6b 0%, rgb(119, 0, 255) 100%)";
-                          } else {
-                            // @ts-ignore
-                            document.querySelector("body").style.background =
-                              "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
-                          }
-                        }}
-                        onDragStart={(event, info) => {
-                          setCardSelected({
-                            cardCode: card?.cardCode,
-                            index: index,
-                          });
-                          setDragStart(info.point.y);
-                        }}
-                        onDragEnd={(event, info) => {
-                          handleOnDragEnd(info, index);
-                        }}
-                      >
-                        {card && (
-                          <img
-                            src={require(`../../assets/images/${card?.cardCode}.svg`)}
-                            alt="carta"
-                            id="card"
-                            className={`${
-                              cardClickedIndex === index && scaled
-                                ? "centered scaled"
-                                : ""
-                            } card card-content animate__bounceInRight`}
-                            onClick={() => handleCardClick(index)}
-                          />
-                        )}
-                      </motion.div>
-                    )
-                  );
-                })}
             </div>
 
-            <div className="battle-dices-inputs player1">
-              <button
-                onClick={() => numDice !== 1 && setNumDice(numDice - 1)}
-                disabled={disableButton}
-                className="battle-dices-input-buttons"
-              >
-                -
-              </button>
-              <button
-                onClick={handlePlayRound}
-                disabled={disablePlayButton || watingPlayersMessagem}
-                id="play-round-button"
-              >
-                {watingPlayersMessagem
-                  ? "Aguardando o outro jogador..."
-                  : battleFinished
-                  ? "Terminar a batalha"
-                  : playerAgainMessagem
-                  ? "Próximo round"
-                  : `Jogar ${numDice} dados`}
-              </button>
-              <button
-                onClick={() => numDice !== 10 && setNumDice(numDice + 1)}
-                disabled={disableButton}
-                className="battle-dices-input-buttons"
-              >
-                +
-              </button>
+            <div className="results-container">
+              {roundResults && roundResults?.length > 0 && (
+                <div className="results-inner-container">
+                  <div className="results-card">
+                    {oponentSelectedCard !== undefined && (
+                      <img
+                        src={require(`../../assets/images/${oponentSelectedCard}.svg`)}
+                        alt="carta"
+                        className={`scale-on-hover animate__backInDown ${hideCardPlayer2}`}
+                      />
+                    )}
+                  </div>
+                  <div className="results-score-container">
+                    <h1>{roundPlayer2Result}</h1>
+                    <h2>X</h2>
+                    <h1>{roundPlayer1Result}</h1>
+                  </div>
+                  <div className="results-card">
+                    {cardSelectedSent?.cardCode !== undefined && (
+                      <img
+                        src={require(`../../assets/images/${cardSelectedSent?.cardCode}.svg`)}
+                        alt="carta"
+                        className={`animate__backInUp scale-on-hover ${hideCard}`}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            {/* <button
+
+            <div className="player-container">
+              <div
+                className={`animate__animated playersDices player1-dices ${animationClassPlayer1} ${isDicesVisisbleClassPlayer1}`}
+                key={diceKey}
+              >
+                <ReactDice
+                  dieSize={45}
+                  rollTime={2}
+                  defaultRoll={1}
+                  numDice={numDiceComponent}
+                  ref={reactDicePlayer1}
+                  disableIndividual
+                  faceColor="#ffffff"
+                  dotColor="#000000"
+                  dieCornerRadius={8}
+                  outline
+                  rollDone={rollDonePlayer1}
+                />
+              </div>
+              <div className="cards-container-test">
+                {pickedCards &&
+                  pickedCards.map((card, index) => {
+                    return (
+                      card !== undefined && (
+                        <motion.div
+                          // whileTap={{ scale: 2, zIndex: 999 }}
+                          className={`card-test-${index}`}
+                          drag={startDrag}
+                          dragSnapToOrigin
+                          whileDrag={{ scale: 2, zIndex: 999 }}
+                          onDrag={(event, info) => {
+                            if (
+                              dragStart &&
+                              dragStart - info.point.y >= 150 &&
+                              !disableCards &&
+                              !cardPlayed
+                            ) {
+                              // @ts-ignore
+                              document.querySelector("body").style.background =
+                                "linear-gradient(180deg, #9c1aff6b 0%, rgb(119, 0, 255) 100%)";
+                            } else {
+                              // @ts-ignore
+                              document.querySelector("body").style.background =
+                                "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
+                            }
+                          }}
+                          onDragStart={(event, info) => {
+                            setCardSelected({
+                              cardCode: card?.cardCode,
+                              index: index,
+                            });
+                            setDragStart(info.point.y);
+                          }}
+                          onDragEnd={(event, info) => {
+                            handleOnDragEnd(info, index);
+                          }}
+                        >
+                          {card && (
+                            <img
+                              src={require(`../../assets/images/${card?.cardCode}.svg`)}
+                              alt="carta"
+                              id="card"
+                              className={`${
+                                cardClickedIndex === index && scaled
+                                  ? "centered scaled"
+                                  : ""
+                              } card card-content animate__bounceInRight`}
+                              onClick={() => handleCardClick(index)}
+                            />
+                          )}
+                        </motion.div>
+                      )
+                    );
+                  })}
+              </div>
+
+              <div className="battle-dices-inputs player1">
+                <button
+                  onClick={() => numDice !== 1 && setNumDice(numDice - 1)}
+                  disabled={disableButton}
+                  className="battle-dices-input-buttons"
+                >
+                  -
+                </button>
+                <button
+                  onClick={handlePlayRound}
+                  disabled={disablePlayButton || watingPlayersMessagem}
+                  id="play-round-button"
+                >
+                  {watingPlayersMessagem
+                    ? "Aguardando o outro jogador..."
+                    : battleFinished
+                    ? "Terminar a batalha"
+                    : playerAgainMessagem
+                    ? "Próximo round"
+                    : `Jogar ${numDice} dados`}
+                </button>
+                <button
+                  onClick={() => numDice !== 10 && setNumDice(numDice + 1)}
+                  disabled={disableButton}
+                  className="battle-dices-input-buttons"
+                >
+                  +
+                </button>
+              </div>
+              {/* <button
               onClick={() => handleOpenModal("myCards")}
               disabled={disableCards}
             >
               Cartas de batalha
             </button> */}
-          </div>
-        </>
-      ) : (
-        <div className="battle-results-container">
-          {showPack && (
-            <div
-              style={{
-                height: "100vh",
-                alignContent: "center",
-              }}
-              id="pack"
-            >
-              <MyIcon className="animate__animated animate__backInDown" />
             </div>
-          )}
-          {showStoledCard && (
-            <div
-              style={{
-                height: "100vh",
-                alignContent: "center",
-              }}
-              id="stoled-card"
-            >
-              <img
-                src={require(`../../assets/images/${selectedStolenCard?.cardCode}.svg`)}
-                alt="carta"
-                className="animate__animated animate__backInDown"
-              />
-            </div>
-          )}
-
-          <div className="battle-results-title-container">
-            <h1>Resultado da batalha:</h1>
-          </div>
-          {battleResult.draw ? (
-            <div>
-              <h1>Empate!</h1>
-              <div>
-                <button onClick={handleLeaveRoom}>Sair da batalha</button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div>
-                <h1>
-                  {battleResult.winner === userId
-                    ? "Você ganhou!"
-                    : "Você perdeu :("}
-                </h1>
-              </div>
-              <div className="battle-results-buttons-container">
-                {battleResult.winner === userId ? (
-                  <>
-                    <button
-                      onClick={handleStealPlayerCard}
-                      disabled={disableStealPlayerCardButton}
-                    >
-                      Roubar carta do oponente
-                    </button>
-                    <button
-                      onClick={handleGetPacks}
-                      disabled={disableGainPackButton}
-                    >
-                      Receber um pacote
-                    </button>
-                    <button onClick={() => handleOpenModal("myCards")}>
-                      Minhas cartas
-                    </button>
-                    <button onClick={handleLeaveRoom}>Sair da batalha</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={handleLeaveRoom}>Sair da batalha</button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-      <CardsModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        isClosing={isClosingModal}
-        setIsClosing={setIsClosingModal}
-      >
-        {modalType === "myCards" ? (
-          <div className="cards-container">
-            {playerCards?.length === 0 ? (
-              <h1>Sem cartas</h1>
-            ) : (
-              playerCards?.map((card, index) => (
-                <CardContainer content={card.quantity} key={index}>
-                  <div
-                    onClick={() => {
-                      if (cardSelected?.index !== index) {
-                        return setCardSelected({
-                          cardCode: card.cardCode,
-                          index: index,
-                        });
-                      }
-                      return setCardSelected(undefined);
-                    }}
-                    onMouseMove={(e) => handleMouseMove(e, `card-${index}`)}
-                    onMouseOut={() => handleMouseOut(`card-${index}`)}
-                    className={
-                      animated
-                        ? "animated player-card-container"
-                        : " player-card-container"
-                    }
-                    id={`card-${index}`}
-                  >
-                    <motion.div
-                      style={{
-                        boxShadow:
-                          index === cardSelected?.index
-                            ? "0 0 50px 15px rgb(0 255 14)"
-                            : "0px 0px 20px 0 rgb(0 0 0)",
-                      }}
-                      onHoverStart={() => {
-                        const myComponent = document.getElementById(
-                          `card-container-${card.cardCode}`
-                        );
-                        //@ts-ignore
-                        myComponent.style.boxShadow =
-                          "0px 0px 20px 5px rgb(0 225 255)";
-                      }}
-                      // @ts-ignore
-                      onMouseLeave={() => {
-                        const myComponent = document.getElementById(
-                          `card-container-${card.cardCode}`
-                        );
-
-                        return index === cardSelected?.index
-                          ? //@ts-ignore
-                            (myComponent.style.boxShadow =
-                              "0 0 50px 15px rgb(0 255 14)")
-                          : //@ts-ignore
-                            (myComponent.style.boxShadow =
-                              "0px 0px 20px 0 rgb(0 0 0)");
-                      }}
-                      className={`card-container demo ${hideUsingCard} animate__bounceIn ${
-                        cardOutAnimation && cardSelected?.index === index
-                          ? "animate__fadeOutUp"
-                          : ""
-                      }`}
-                      whileHover={{ scale: 1.5 }}
-                      whileTap={{ scale: 1 }}
-                      id={`card-container-${card.cardCode}`}
-                    >
-                      <img
-                        src={require(`../../assets/images/${card.cardCode}.svg`)}
-                        alt="carta"
-                        id="card"
-                        className="card card-content"
-                      />
-                    </motion.div>
-                  </div>
-                </CardContainer>
-              ))
-            )}
-          </div>
+          </>
         ) : (
-          <div className="cards-container">
-            {opponentCards?.length === 0 ? (
-              <h1>O oponente não tem cartas</h1>
-            ) : (
-              opponentCards?.map((card, index) => (
-                <CardContainer content={card.quantity} key={index}>
-                  <div
-                    className={
-                      animated
-                        ? "animated player-card-container"
-                        : " player-card-container"
-                    }
-                    onMouseMove={(e) => handleMouseMove(e, `card-${index}`)}
-                    onMouseOut={() => handleMouseOut(`card-${index}`)}
-                    onClick={() => {
-                      if (cardSelected?.index !== index) {
-                        return setCardSelected({
-                          cardCode: card.cardCode,
-                          index: index,
-                        });
-                      }
-                      return setCardSelected(undefined);
-                    }}
-                    id={`card-${index}`}
-                  >
-                    <motion.div
-                      style={{
-                        boxShadow:
-                          index === cardSelected?.index
-                            ? "0 0 50px 15px rgb(0 255 14)"
-                            : "0px 0px 20px 0 rgb(0 0 0)",
-                      }}
-                      onHoverStart={() => {
-                        const myComponent = document.getElementById(
-                          `card-container-${card.cardCode}`
-                        );
-                        //@ts-ignore
-                        myComponent.style.boxShadow =
-                          "0px 0px 20px 5px rgb(0 225 255)";
-                      }}
-                      // @ts-ignore
-                      onMouseLeave={() => {
-                        const myComponent = document.getElementById(
-                          `card-container-${card.cardCode}`
-                        );
+          <div className="battle-results-container">
+            {showPack && (
+              <div
+                style={{
+                  height: "100vh",
+                  alignContent: "center",
+                }}
+                id="pack"
+              >
+                <MyIcon className="animate__animated animate__backInDown" />
+              </div>
+            )}
+            {showStoledCard && (
+              <div
+                style={{
+                  height: "100vh",
+                  alignContent: "center",
+                }}
+                id="stoled-card"
+              >
+                <img
+                  src={require(`../../assets/images/${selectedStolenCard?.cardCode}.svg`)}
+                  alt="carta"
+                  className="animate__animated animate__backInDown"
+                />
+              </div>
+            )}
 
-                        return index === cardSelected?.index
-                          ? //@ts-ignore
-                            (myComponent.style.boxShadow =
-                              "0 0 50px 15px rgb(0 255 14)")
-                          : //@ts-ignore
-                            (myComponent.style.boxShadow =
-                              "0px 0px 20px 0 rgb(0 0 0)");
-                      }}
-                      className={`card-container demo ${hideUsingCard} animate__bounceIn ${
-                        cardOutAnimation && cardSelected?.index === index
-                          ? "animate__zoomOut"
-                          : ""
-                      }`}
-                      whileHover={{ scale: 1.5 }}
-                      whileTap={{ scale: 1 }}
-                      id={`card-container-${card.cardCode}`}
-                    >
-                      <img
-                        src={require(`../../assets/images/${card.cardCode}.svg`)}
-                        alt="carta"
-                        id="card"
-                        className="card card-content"
-                      />
-                    </motion.div>
-                  </div>
-                </CardContainer>
-              ))
+            <div className="battle-results-title-container">
+              <h1>Resultado da batalha:</h1>
+            </div>
+            {battleResult.draw ? (
+              <div>
+                <h1>Empate!</h1>
+                <div>
+                  <button onClick={handleLeaveRoom}>Sair da batalha</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <h1>
+                    {battleResult.winner === userId
+                      ? "Você ganhou!"
+                      : "Você perdeu :("}
+                  </h1>
+                </div>
+                <div className="battle-results-buttons-container">
+                  {battleResult.winner === userId ? (
+                    <>
+                      <button
+                        onClick={handleStealPlayerCard}
+                        disabled={disableStealPlayerCardButton}
+                      >
+                        Roubar carta do oponente
+                      </button>
+                      <button
+                        onClick={handleGetPacks}
+                        disabled={disableGainPackButton}
+                      >
+                        Receber um pacote
+                      </button>
+                      <button onClick={() => handleOpenModal("myCards")}>
+                        Minhas cartas
+                      </button>
+                      <button onClick={handleLeaveRoom}>Sair da batalha</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={handleLeaveRoom}>Sair da batalha</button>
+                    </>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}
-
-        <div className="cards-modal-button-container">
+        <CardsModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          isClosing={isClosingModal}
+          setIsClosing={setIsClosingModal}
+        >
           {modalType === "myCards" ? (
-            <button
-              // onClick={handlePlayCard}
-              // @ts-ignore
-              disabled={
-                opponentCards?.length === 0 || battleResult || cardPlayed
-              }
-            >
-              Jogar carta
-            </button>
+            <div className="cards-container">
+              {playerCards?.length === 0 ? (
+                <h1>Sem cartas</h1>
+              ) : (
+                playerCards?.map((card, index) => (
+                  <CardContainer content={card.quantity} key={index}>
+                    <div
+                      onClick={() => {
+                        if (cardSelected?.index !== index) {
+                          return setCardSelected({
+                            cardCode: card.cardCode,
+                            index: index,
+                          });
+                        }
+                        return setCardSelected(undefined);
+                      }}
+                      onMouseMove={(e) => handleMouseMove(e, `card-${index}`)}
+                      onMouseOut={() => handleMouseOut(`card-${index}`)}
+                      className={
+                        animated
+                          ? "animated player-card-container"
+                          : " player-card-container"
+                      }
+                      id={`card-${index}`}
+                    >
+                      <motion.div
+                        style={{
+                          boxShadow:
+                            index === cardSelected?.index
+                              ? "0 0 50px 15px rgb(0 255 14)"
+                              : "0px 0px 20px 0 rgb(0 0 0)",
+                        }}
+                        onHoverStart={() => {
+                          const myComponent = document.getElementById(
+                            `card-container-${card.cardCode}`
+                          );
+                          //@ts-ignore
+                          myComponent.style.boxShadow =
+                            "0px 0px 20px 5px rgb(0 225 255)";
+                        }}
+                        // @ts-ignore
+                        onMouseLeave={() => {
+                          const myComponent = document.getElementById(
+                            `card-container-${card.cardCode}`
+                          );
+
+                          return index === cardSelected?.index
+                            ? //@ts-ignore
+                              (myComponent.style.boxShadow =
+                                "0 0 50px 15px rgb(0 255 14)")
+                            : //@ts-ignore
+                              (myComponent.style.boxShadow =
+                                "0px 0px 20px 0 rgb(0 0 0)");
+                        }}
+                        className={`card-container demo ${hideUsingCard} animate__bounceIn ${
+                          cardOutAnimation && cardSelected?.index === index
+                            ? "animate__fadeOutUp"
+                            : ""
+                        }`}
+                        whileHover={{ scale: 1.5 }}
+                        whileTap={{ scale: 1 }}
+                        id={`card-container-${card.cardCode}`}
+                      >
+                        <img
+                          src={require(`../../assets/images/${card.cardCode}.svg`)}
+                          alt="carta"
+                          id="card"
+                          className="card card-content"
+                        />
+                      </motion.div>
+                    </div>
+                  </CardContainer>
+                ))
+              )}
+            </div>
           ) : (
-            <button
-              onClick={handleStealPlayCardButton}
-              disabled={opponentCards?.length === 0}
-            >
-              Roubar carta
-            </button>
+            <div className="cards-container">
+              {opponentCards?.length === 0 ? (
+                <h1>O oponente não tem cartas</h1>
+              ) : (
+                opponentCards?.map((card, index) => (
+                  <CardContainer content={card.quantity} key={index}>
+                    <div
+                      className={
+                        animated
+                          ? "animated player-card-container"
+                          : " player-card-container"
+                      }
+                      onMouseMove={(e) => handleMouseMove(e, `card-${index}`)}
+                      onMouseOut={() => handleMouseOut(`card-${index}`)}
+                      onClick={() => {
+                        if (cardSelected?.index !== index) {
+                          return setCardSelected({
+                            cardCode: card.cardCode,
+                            index: index,
+                          });
+                        }
+                        return setCardSelected(undefined);
+                      }}
+                      id={`card-${index}`}
+                    >
+                      <motion.div
+                        style={{
+                          boxShadow:
+                            index === cardSelected?.index
+                              ? "0 0 50px 15px rgb(0 255 14)"
+                              : "0px 0px 20px 0 rgb(0 0 0)",
+                        }}
+                        onHoverStart={() => {
+                          const myComponent = document.getElementById(
+                            `card-container-${card.cardCode}`
+                          );
+                          //@ts-ignore
+                          myComponent.style.boxShadow =
+                            "0px 0px 20px 5px rgb(0 225 255)";
+                        }}
+                        // @ts-ignore
+                        onMouseLeave={() => {
+                          const myComponent = document.getElementById(
+                            `card-container-${card.cardCode}`
+                          );
+
+                          return index === cardSelected?.index
+                            ? //@ts-ignore
+                              (myComponent.style.boxShadow =
+                                "0 0 50px 15px rgb(0 255 14)")
+                            : //@ts-ignore
+                              (myComponent.style.boxShadow =
+                                "0px 0px 20px 0 rgb(0 0 0)");
+                        }}
+                        className={`card-container demo ${hideUsingCard} animate__bounceIn ${
+                          cardOutAnimation && cardSelected?.index === index
+                            ? "animate__zoomOut"
+                            : ""
+                        }`}
+                        whileHover={{ scale: 1.5 }}
+                        whileTap={{ scale: 1 }}
+                        id={`card-container-${card.cardCode}`}
+                      >
+                        <img
+                          src={require(`../../assets/images/${card.cardCode}.svg`)}
+                          alt="carta"
+                          id="card"
+                          className="card card-content"
+                        />
+                      </motion.div>
+                    </div>
+                  </CardContainer>
+                ))
+              )}
+            </div>
           )}
-        </div>
-      </CardsModal>
-    </div>
+
+          <div className="cards-modal-button-container">
+            {modalType === "myCards" ? (
+              <button
+                // onClick={handlePlayCard}
+                // @ts-ignore
+                disabled={
+                  opponentCards?.length === 0 || battleResult || cardPlayed
+                }
+              >
+                Jogar carta
+              </button>
+            ) : (
+              <button
+                onClick={handleStealPlayCardButton}
+                disabled={opponentCards?.length === 0}
+              >
+                Roubar carta
+              </button>
+            )}
+          </div>
+        </CardsModal>
+      </div>
+    </BackgroundAnimation>
   );
 };
 

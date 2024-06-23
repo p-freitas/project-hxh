@@ -4,9 +4,10 @@ body {
   font-family: 'Chakra Petch', sans-serif;
   line-height: 44px;
   height: 100vh;
-  background: linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%);
+  background: radial-gradient(#B850FF, #7200AC);
   overflow: hidden;
   padding: 0;
+  margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;

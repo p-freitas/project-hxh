@@ -11,7 +11,8 @@
 }
 
 .modal.open {
-    display: block;
+    display: flex;
+    align-items: center;
 }
 
 .modal-content {
