@@ -13,6 +13,7 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/users");
 const cardsRoutes = require("./routes/cards");
+const packsRoutes = require("./routes/packs");
 const server = http.createServer(app);
 const cardsHelper = require("./helpers/cardsHelper");
 
@@ -49,6 +50,7 @@ app.get("/ping", (req, res) => {
 
 app.use("/users", authRoutes);
 app.use("/cards", cardsRoutes);
+app.use("/packs", packsRoutes);
 
 const rooms = new Map();
 let roomsAvaiable = [];

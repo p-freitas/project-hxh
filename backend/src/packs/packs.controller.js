@@ -5,9 +5,30 @@ const jwt = require("jsonwebtoken");
 const User = require("../users/user.model");
 
 exports.AddPacks = async (req, res) => {
-  const { userId } = req.body;
+  const { userId, number } = req.body;
 
   console.log("userId::", userId);
+
+  // Find the user
+  const user = await User.findOne({ userId });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Find the pack within the user's pack
+  const packIndex = user.packs.findIndex((c) => c.packType === "battle");
+
+  if (packIndex === -1) {
+    // pack not found, add new pack
+    user.packs.push({ packType: "battle", quantity: number });
+  } else {
+    // pack found, update quantity
+    user.packs[packIndex].quantity += number;
+  }
+
+  // Save the updated user document
+  user.save();
 
   try {
     if (!userId) {
