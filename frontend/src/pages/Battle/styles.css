@@ -60,7 +60,7 @@
     z-index: 1;
     cursor: pointer;
     transition: transform 0.5s ease-out, top 0.5s ease-out, left 0.5s ease-out;
-    transform: scale(1);
+    width: 175px;
 }
 
 .centered {

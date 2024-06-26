@@ -125,11 +125,14 @@ ul li a {
 }
 
 .pack-wrapper {
+    height: 100vh;
     width: 100%;
-    height: 290px;
-    padding: 0 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 0;
     position: relative;
-    display: none;
 }
 
 .pack-wrapper .item {
@@ -851,5 +854,9 @@ li.active {
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 15px;
+}
+
+.rive-card-container {
+    width: 200px;
+    height: 300px;
 }

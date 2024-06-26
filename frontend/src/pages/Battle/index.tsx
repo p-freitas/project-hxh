@@ -877,7 +877,7 @@ const Battle = ({ socket }: any) => {
                     <h2>X</h2>
                     <h1>{roundPlayer1Result}</h1>
                   </div>
-                  <div className="results-card">
+                  <div className="results-card player1">
                     {cardSelectedSent?.cardCode !== undefined && (
                       <img
                         src={require(`../../assets/images/${cardSelectedSent?.cardCode}.svg`)}
@@ -916,7 +916,7 @@ const Battle = ({ socket }: any) => {
                       card !== undefined && (
                         <motion.div
                           // whileTap={{ scale: 2, zIndex: 999 }}
-                          className={`card-test-${index}`}
+                          className={`card-inner-container card-test-${index}`}
                           drag={startDrag}
                           dragSnapToOrigin
                           whileDrag={{ scale: 2, zIndex: 999 }}
@@ -928,12 +928,17 @@ const Battle = ({ socket }: any) => {
                               !cardPlayed
                             ) {
                               // @ts-ignore
-                              document.querySelector("body").style.background =
-                                "linear-gradient(180deg, #9c1aff6b 0%, rgb(119, 0, 255) 100%)";
+                              document.querySelector(
+                                ".results-card.player1"
+                                // @ts-ignore
+                              ).style.background =
+                                "radial-gradient(circle, rgba(253,93,255,1) 0%, rgba(168,69,218,1) 90%, rgba(217,101,255,1) 100%)";
                             } else {
                               // @ts-ignore
-                              document.querySelector("body").style.background =
-                                "linear-gradient(180deg, #9c1aff 0%, rgb(119, 0, 255) 100%)";
+                              document.querySelector(
+                                ".results-card.player1"
+                                // @ts-ignore
+                              ).style.background = "none";
                             }
                           }}
                           onDragStart={(event, info) => {

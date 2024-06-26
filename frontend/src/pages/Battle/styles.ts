@@ -6,6 +6,11 @@ interface CardContainerProps {
 
 const CardContainer = styled.div<CardContainerProps>`
   .card-container {
+    img {
+      width: 175px;
+      height: 250px;
+    }
+      
     &:after {
       content: "${(props) => props.content}";
       display: flex;
