@@ -152,8 +152,8 @@ const Lobby = ({ socket }: any) => {
 
   useEffect(() => {
     validateToken();
-    getPlayerCards();
     getUserPacks();
+    getPlayerCards();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -231,17 +231,23 @@ const Lobby = ({ socket }: any) => {
     }
   };
 
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
+  const handleOpenModal = async () => {
+    await getPlayerCards().then(() => {
+      setIsModalOpen(true);
+    });
+  };
+
+  const handlePlayButton = async () => {
+    // setOpenCardSeletionModal(true);
+    await getPlayerCards().then(() => {
+      setOpenCardSeletionModal(true);
+    });
   };
 
   return (
     <BackgroundAnimation artboard="Artboard">
       <div className="lobby-container">
-        <button
-          onClick={() => setOpenCardSeletionModal(true)}
-          disabled={playButtonDisabled}
-        >
+        <button onClick={handlePlayButton} disabled={playButtonDisabled}>
           Play
         </button>
         {userPacks && (

@@ -21,6 +21,7 @@ const RiveCards: React.FC<RiveCardsProps> = ({ cardCode }) => {
     layout: new Layout({
       fit: Fit.FitWidth,
     }),
+    isTouchScrollEnabled: true,
     //@ts-ignore
     assetLoader: async (asset, bytes) => {
       if (asset.isImage) {

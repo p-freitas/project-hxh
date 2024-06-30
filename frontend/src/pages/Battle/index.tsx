@@ -21,6 +21,7 @@ type RoundResult = {
 type RoundResultWinner = {
   draw: boolean;
   winner: string;
+  round: number;
 };
 
 type CardSelectedType = {
@@ -115,6 +116,7 @@ const Battle = ({ socket }: any) => {
   const [startDrag, setStartDrag] = useState<boolean>(true);
   const [scaled, setScaled] = useState(false);
   const [cardClickedIndex, setCardClickedIndex] = useState<number>();
+  const [nextRoundBeginning, setNextRoundBeginning] = useState<string>();
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -253,14 +255,33 @@ const Battle = ({ socket }: any) => {
     };
   }, [socket]);
 
+  function removeFirstAppearances(
+    arr: RoundResultWinner[]
+  ): RoundResultWinner[] {
+    const seen = new Set<number>();
+    const firstAppearances: { [key: number]: number } = {};
+
+    // Record the first appearances of each round
+    arr.forEach((item, index) => {
+      if (!seen.has(item.round)) {
+        seen.add(item.round);
+        firstAppearances[item.round] = index;
+      }
+    });
+
+    // Filter the array to remove the first appearances
+    return arr.filter((item, index) => index !== firstAppearances[item.round]);
+  }
+
   useEffect(() => {
     socket.on(
       "setRoundResult",
-      (data: RoundResult[], round: number, hostId: string) => {
+      (data: RoundResult[], round: number, playersUsedCard: boolean) => {
         setTimeout(
           () => {
             setDisableCards(false);
             setRoundResults(data);
+
             data?.map((item) => {
               return item.id === userId
                 ? setRoundPlayer1Result(item.score)
@@ -324,6 +345,8 @@ const Battle = ({ socket }: any) => {
 
             // if (result && hostId === userId) {
             if (!roundAlreadyPlayed) {
+              setDisablePlayButton(false);
+
               const newObj = {
                 draw: result.draw,
                 winner: result.highestScorer.id,
@@ -332,14 +355,54 @@ const Battle = ({ socket }: any) => {
               setRoundResultsWinner([...roundResultsWinner, newObj]);
               setRoundAlreadyPlayed(true);
             } else {
-              // @ts-ignore
-              setRoundResultsWinner(roundResultsWinner.pop());
+              setDisablePlayButton(true);
+
               const newObj = {
                 draw: result.draw,
                 winner: result.highestScorer.id,
                 round: roundNumber,
               };
               setRoundResultsWinner([...roundResultsWinner, newObj]);
+
+              if (playersUsedCard) {
+                let timerInterval = 10;
+                const interval = setInterval(() => {
+                  timerInterval--;
+                  setNextRoundBeginning(`Próximo round em ${timerInterval}...`);
+
+                  if (timerInterval === 0) {
+                    clearInterval(interval);
+                  }
+                }, 1000);
+
+                setTimeout(() => {
+                  socket.emit(
+                    "nextRound",
+                    gameId,
+                    userId,
+                    removeFirstAppearances([...roundResultsWinner, newObj])
+                  );
+                }, 10 * 1000);
+              } else {
+                let timerInterval = 5;
+                const interval = setInterval(() => {
+                  timerInterval--;
+                  setNextRoundBeginning(`Próximo round em ${timerInterval}...`);
+
+                  if (timerInterval === 0) {
+                    clearInterval(interval);
+                  }
+                }, 1000);
+
+                setTimeout(() => {
+                  socket.emit(
+                    "nextRound",
+                    gameId,
+                    userId,
+                    removeFirstAppearances([...roundResultsWinner, newObj])
+                  );
+                }, 5 * 1000);
+              }
             }
             // }
 
@@ -402,7 +465,6 @@ const Battle = ({ socket }: any) => {
 
             setWatingPlayersMessagem(false);
             setPlayerAgainMessagem(true);
-            setDisablePlayButton(false);
             setShowTimer(true);
           },
           !cardPlayed ? 2200 : 0
@@ -507,7 +569,7 @@ const Battle = ({ socket }: any) => {
             }
           });
         }
-        socket.emit("getRoundResult", gameId, userId, true);
+        // socket.emit("getRoundResult", gameId, userId, true);
       }
     });
 
@@ -559,6 +621,8 @@ const Battle = ({ socket }: any) => {
       setCardPlayed(false);
       setRoundAlreadyPlayed(false);
       setShowTimer(true);
+      setNextRoundBeginning(undefined);
+      setDisablePlayButton(false);
     });
 
     return () => {
@@ -613,7 +677,9 @@ const Battle = ({ socket }: any) => {
     if (playerAgainMessagem) {
       setDisableCards(true);
       setShowTimer(false);
-      socket.emit("nextRound", gameId, userId, roundResultsWinner);
+      // socket.emit("nextRound", gameId, userId, roundResultsWinner);
+      socket.emit("getRoundData", gameId, userId);
+
       setWatingPlayersMessagem(true);
       return;
     }
@@ -951,6 +1017,7 @@ const Battle = ({ socket }: any) => {
                           onDragEnd={(event, info) => {
                             handleOnDragEnd(info, index);
                           }}
+                          key={index}
                         >
                           {card && (
                             <img
@@ -988,8 +1055,10 @@ const Battle = ({ socket }: any) => {
                     ? "Aguardando o outro jogador..."
                     : battleFinished
                     ? "Terminar a batalha"
+                    : nextRoundBeginning
+                    ? nextRoundBeginning
                     : playerAgainMessagem
-                    ? "Próximo round"
+                    ? "Continuar"
                     : `Jogar ${numDice} dados`}
                 </button>
                 <button
