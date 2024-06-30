@@ -68,6 +68,7 @@ const Login = () => {
   }, []);
 
   const handleLoginButton = async () => {
+    await GoogleAuth.initialize({});
     await GoogleAuth.signIn().then((response) => {
       if (response) {
         fetch(`${process.env.REACT_APP_API_BASE_URL}/users/auth/google`, {
@@ -94,6 +95,9 @@ const Login = () => {
     <div className="login-page-container">
       {Capacitor.getPlatform() === "android" && (
         <button onClick={handleLoginButton}>Login Android</button>
+      )}
+      {Capacitor.getPlatform() === "ios" && (
+        <button onClick={handleLoginButton}>Login IOS</button>
       )}
 
       <GoogleLogin
