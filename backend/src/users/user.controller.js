@@ -434,6 +434,8 @@ exports.googleAuth = async (req, res) => {
       });
       await newUser.save();
 
+      console.log('User logged: ', id);
+
       // Success
       return res.status(200).json({
         success: true,
@@ -457,6 +459,8 @@ exports.googleAuth = async (req, res) => {
 
       user.accessToken = jwtToken;
       await user.save();
+
+      console.log('User logged: ', user.userId);
 
       // Success
       return res.status(200).json({

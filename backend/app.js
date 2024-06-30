@@ -251,10 +251,18 @@ const startTimer = (roomId) => {
   }
 };
 
-const generateRandomNumber = () => {
+const generateRandomNumber = (gameId) => {
+  const room = rooms.get(gameId);
   const min = 6;
-  const max = 30;
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  const max = 40;
+  const selectedNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+
+  if (!room?.previusSelectedNumbers?.includes(selectedNumber)) {
+    room?.previusSelectedNumbers?.push(selectedNumber);
+    return selectedNumber;
+  }
+
+  return generateRandomNumber(gameId);
 };
 
 // Socket.io connection handling
@@ -300,14 +308,21 @@ io.on("connection", (socket) => {
         {
           id: userId,
           isReady: false,
+          isReadyToFinishRound: false,
           playerReadyFinishBattle: false,
           cards: selectedCardsArray,
           dices: [],
           socketId: socket.id,
+          cardPlayed: {
+            status: false,
+            card: null,
+            result: null,
+          },
         },
       ],
       round: 1,
-      selectedRandomNumber: generateRandomNumber(),
+      selectedRandomNumber: 0,
+      previusSelectedNumbers: [],
     });
     roomTimers[gameId] = [];
     roomTimers[gameId].defaultTime = timerInterval;
@@ -325,10 +340,16 @@ io.on("connection", (socket) => {
       room?.players?.push({
         id: userId,
         isReady: false,
+        isReadyToFinishRound: false,
         playerReadyFinishBattle: false,
         cards: selectedCardsArray,
         dices: [],
         socketId: socket.id,
+        cardPlayed: {
+          status: false,
+          card: null,
+          result: null,
+        },
       });
     }
     io.to(gameId).emit("joinedGame", gameId);
@@ -410,7 +431,7 @@ io.on("connection", (socket) => {
       score: player.dices.reduce((total, dice) => total + dice, 0),
     }));
 
-    socket.emit("setRoundResult", sums, room.round, room.players[0].id);
+    socket.emit("setRoundResult", sums, room.round, false);
     setTimeout(() => {
       startTimer(gameId);
     }, 2500);
@@ -441,8 +462,14 @@ io.on("connection", (socket) => {
 
     const result = handleCards(card, room.players, userId);
     room.players = result.array;
-    socket.to(gameId).emit("oponentCard", card);
-    io.to(gameId).emit("cardResult", result);
+    room.players[indexToEdit].cardPlayed.status = true;
+    room.players[indexToEdit].cardPlayed.card = card;
+    room.players[indexToEdit].cardPlayed.result = result;
+
+    //comentar os dois
+    // socket.to(gameId).emit("oponentCard", card);
+    // io.to(gameId).emit("cardResult", result);
+
     startTimer(gameId);
 
     // Emit the updated card array to the user
@@ -461,7 +488,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("nextRound", (gameId, userId, matchResults) => {
-    console.log("matchResults 1::", matchResults);
     const room = rooms.get(gameId);
     const indexToEdit = room?.players?.findIndex((obj) => obj.id === userId);
     room.players[indexToEdit].isReady = false;
@@ -471,7 +497,6 @@ io.on("connection", (socket) => {
       room?.players[0]?.isReady === false &&
       room?.players[1]?.isReady === false
     ) {
-      console.log("matchResults 2::", matchResults);
       room.round = room.round + 1;
       const winCounts = {};
 
@@ -486,7 +511,7 @@ io.on("connection", (socket) => {
       }
 
       // Determine the winner or if it's a tie
-      const requiredWins = 4; // Best of 5 requires at least 3 wins
+      const requiredWins = 4; // Best of 7 requires at least 4 wins
       let topWinner = null;
       let highestWins = 0;
       let isTie = false;
@@ -511,7 +536,7 @@ io.on("connection", (socket) => {
       // Final determination based on win counts
       if (isTie || highestWins < requiredWins) {
         console.log("if");
-        room.selectedRandomNumber = generateRandomNumber();
+        room.selectedRandomNumber = generateRandomNumber(gameId);
         io.to(gameId).emit(
           "setSelectedRandomNumber",
           room.selectedRandomNumber
@@ -529,6 +554,10 @@ io.on("connection", (socket) => {
       }
       room.players[0].dices = [];
       room.players[1].dices = [];
+      room.players[0].isReadyToFinishRound = false;
+      room.players[1].isReadyToFinishRound = false;
+      room.players[0].cardPlayed.status = false;
+      room.players[1].cardPlayed.status = false;
     }
   });
 
@@ -656,7 +685,9 @@ io.on("connection", (socket) => {
 
   socket.on("getSelectedRandomNumber", (gameId) => {
     const room = rooms.get(gameId);
-    socket.emit("setSelectedRandomNumber", room?.selectedRandomNumber);
+    const selectedNumber = generateRandomNumber(gameId);
+    room.selectedRandomNumber = selectedNumber;
+    io.to(gameId).emit("setSelectedRandomNumber", room?.selectedRandomNumber);
   });
 
   socket.on("getPickedPlayersCard", (gameId, userId) => {
@@ -665,6 +696,55 @@ io.on("connection", (socket) => {
     const playerIndex = room?.players?.findIndex((obj) => obj.id === userId);
 
     socket.emit("pickedCards", room?.players[playerIndex]?.cards);
+  });
+
+  socket.on("getRoundData", (gameId, userId) => {
+    const room = rooms.get(gameId);
+    const indexToEdit = room?.players?.findIndex((obj) => obj.id === userId);
+    const player2Index = indexToEdit === 0 ? 1 : 0;
+    room.players[indexToEdit].isReadyToFinishRound = true;
+    let playersUsedCard = false;
+
+    if (
+      room.players[0].isReadyToFinishRound === true &&
+      room.players[1].isReadyToFinishRound === true
+    ) {
+      if (room.players[indexToEdit].cardPlayed.status === true) {
+        socket
+          .to(gameId)
+          .emit("oponentCard", room.players[indexToEdit].cardPlayed.card);
+        const result = {
+          dicesChanged:
+            room.players[indexToEdit].cardPlayed.result.dicesChanged,
+          playerAffected:
+            room.players[indexToEdit].cardPlayed.result.playerAffected,
+        };
+        io.to(gameId).emit("cardResult", result);
+        playersUsedCard = true;
+      }
+      if (room.players[player2Index].cardPlayed.status === true) {
+        socket.emit("oponentCard", room.players[player2Index].cardPlayed.card);
+        const result = {
+          dicesChanged:
+            room.players[player2Index].cardPlayed.result.dicesChanged,
+          playerAffected:
+            room.players[player2Index].cardPlayed.result.playerAffected,
+        };
+        io.to(gameId).emit("cardResult", result);
+        playersUsedCard = true;
+      }
+      // Calculate sum of dices for each player
+      const sums = room?.players?.map((player) => ({
+        id: player.id,
+        score: player.dices.reduce((total, dice) => total + dice, 0),
+      }));
+
+      io.to(gameId).emit("setRoundResult", sums, room.round, playersUsedCard);
+      playersUsedCard = false;
+      setTimeout(() => {
+        startTimer(gameId);
+      }, 2500);
+    }
   });
 });
 

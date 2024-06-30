@@ -5,6 +5,6 @@ const { validateToken } = require("../middlewares/validateToken");
 
 const PacksController = require("../src/packs/packs.controller");
 
-router.post("/gainPacks", validateToken, PacksController.AddPacks);
+router.post("/gainPacks", PacksController.AddPacks);
 
 module.exports = router;
