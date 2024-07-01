@@ -153,8 +153,10 @@
     border-radius: 10px;
 }
 
-.results-score-container h1 {
-    font-size: 40px;
+.results-score-container {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
 }
 
 .cards-container {
@@ -1387,4 +1389,9 @@
 
 .battle-results-title-container {
     margin-top: 50%;
+}
+
+.rive-container {
+    position: absolute;
+    width: 100%;
 }

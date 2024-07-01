@@ -82,7 +82,9 @@ const PackOpening: React.FC<PackOpeningProps> = ({
         showPackOpening ? "open" : ""
       } ${isClosing ? "animate__animated animate__bounceOut" : ""}`}
     >
-      <div className="container">{!isHidden && <RiveWrapper />}</div>
+      <div className="container">
+        {!isHidden && <RiveWrapper artboard='pack' imageName={undefined} />}
+      </div>
       {showPackStandard && (
         <div className="pack-standard-container">
           <div id="pack-standard" className="">

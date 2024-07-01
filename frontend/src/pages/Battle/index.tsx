@@ -9,9 +9,10 @@ import PointsCounter from "../../components/PointsCounter";
 import { useAxios } from "../../context/AxiosContext";
 import CardContainer from "./styles";
 import CircularProgressBar from "../../components/CircularProgressBar";
-import { ReactComponent as MyIcon } from "../../assets/images/battle-pack.svg";
 import SlotCounter from "react-slot-counter";
 import BackgroundAnimation from "../../components/BackgroundAnimation";
+import RiveWrapper from "../../components/RiveWrapper";
+import { AnimatedCounter } from "react-animated-counter";
 
 type RoundResult = {
   id: string;
@@ -94,8 +95,6 @@ const Battle = ({ socket }: any) => {
   const [battleFinished, setBattleFinished] = useState<boolean>(false);
   const [battleResult, setBattleResult] = useState<BattleResultType>();
   const [opponentCards, setOpponentCards] = useState<CardSelectedType[]>();
-  const [selectedStolenCard, setSelectedStolenCard] =
-    useState<CardSelectedType>();
   const [animated, setAnimated] = useState<boolean>(false);
   const [disableCards, setDisableCards] = useState<boolean>(true);
   const [cardPlayed, setCardPlayed] = useState<boolean>(false);
@@ -103,8 +102,6 @@ const Battle = ({ socket }: any) => {
     useState<boolean>(false);
   const [disableGainPackButton, setDisableGainPackButton] =
     useState<boolean>(false);
-  const [showPack, setShowPack] = useState<boolean>(false);
-  const [showStoledCard, setShowStoledCard] = useState<boolean>(false);
   const [roundAlreadyPlayed, setRoundAlreadyPlayed] = useState<boolean>(false);
   const [seconds, setSeconds] = useState<number>(600000);
   const [showTimer, setShowTimer] = useState<boolean>(true);
@@ -117,6 +114,10 @@ const Battle = ({ socket }: any) => {
   const [scaled, setScaled] = useState(false);
   const [cardClickedIndex, setCardClickedIndex] = useState<number>();
   const [nextRoundBeginning, setNextRoundBeginning] = useState<string>();
+  const [isHiddenCardRiveAnimation, setIsHiddenCardRiveAnimation] =
+    useState(true);
+  const [isHiddenPackRiveAnimation, setIsHiddenPackRiveAnimation] =
+    useState(true);
 
   const handleMouseMove = (
     e: React.MouseEvent | React.TouchEvent,
@@ -345,6 +346,7 @@ const Battle = ({ socket }: any) => {
 
             // if (result && hostId === userId) {
             if (!roundAlreadyPlayed) {
+              setPlayerAgainMessagem(true);
               setDisablePlayButton(false);
 
               const newObj = {
@@ -355,6 +357,7 @@ const Battle = ({ socket }: any) => {
               setRoundResultsWinner([...roundResultsWinner, newObj]);
               setRoundAlreadyPlayed(true);
             } else {
+              setPlayerAgainMessagem(false);
               setDisablePlayButton(true);
 
               const newObj = {
@@ -366,6 +369,7 @@ const Battle = ({ socket }: any) => {
 
               if (playersUsedCard) {
                 let timerInterval = 10;
+                setNextRoundBeginning(`Próximo round em 10...`);
                 const interval = setInterval(() => {
                   timerInterval--;
                   setNextRoundBeginning(`Próximo round em ${timerInterval}...`);
@@ -385,6 +389,7 @@ const Battle = ({ socket }: any) => {
                 }, 10 * 1000);
               } else {
                 let timerInterval = 5;
+                setNextRoundBeginning(`Próximo round em 5...`);
                 const interval = setInterval(() => {
                   timerInterval--;
                   setNextRoundBeginning(`Próximo round em ${timerInterval}...`);
@@ -464,7 +469,6 @@ const Battle = ({ socket }: any) => {
             }
 
             setWatingPlayersMessagem(false);
-            setPlayerAgainMessagem(true);
             setShowTimer(true);
           },
           !cardPlayed ? 2200 : 0
@@ -752,8 +756,12 @@ const Battle = ({ socket }: any) => {
   const handleStealPlayCardButton = () => {
     setDisableStealPlayerCardButton(true);
     setDisableGainPackButton(true);
-    setCardOutAnimation(true);
     setIsClosingModal(true);
+    setIsHiddenCardRiveAnimation(false);
+
+    setTimeout(() => {
+      setIsHiddenCardRiveAnimation(true);
+    }, 3500);
 
     socket.emit(
       "stealPlayerCard",
@@ -766,7 +774,6 @@ const Battle = ({ socket }: any) => {
     setTimeout(() => {
       handleCloseModal();
       setIsClosingModal(false);
-      handleStoledCardAnimation();
     }, 500);
   };
 
@@ -801,40 +808,12 @@ const Battle = ({ socket }: any) => {
   const handleGetPacks = () => {
     setDisableStealPlayerCardButton(true);
     setDisableGainPackButton(true);
+    setIsHiddenPackRiveAnimation(false);
     socket.emit("gainPacks", userId);
 
-    setShowPack(true);
     setTimeout(() => {
-      const myComponent = document.getElementById("pack");
-      myComponent?.classList.add("animate__tada");
-    }, 1000);
-    setTimeout(() => {
-      const myComponent = document.getElementById("pack");
-
-      myComponent?.classList.add("animate__backOutDown");
-    }, 2500);
-    setTimeout(() => {
-      setShowPack(false);
-    }, 3200);
-  };
-
-  const handleStoledCardAnimation = () => {
-    setSelectedStolenCard(cardSelected);
-    setShowStoledCard(true);
-    setTimeout(() => {
-      const myComponent = document.getElementById("stoled-card");
-      myComponent?.classList.add("animate__tada");
-    }, 1000);
-    setTimeout(() => {
-      const myComponent = document.getElementById("stoled-card");
-
-      myComponent?.classList.add("animate__backOutDown");
-    }, 2500);
-    setTimeout(() => {
-      setShowStoledCard(false);
-      setCardSelected(undefined);
-      setCardOutAnimation(false);
-    }, 3200);
+      setIsHiddenPackRiveAnimation(true);
+    }, 3500);
   };
 
   const handleLeaveRoom = () => {
@@ -939,9 +918,19 @@ const Battle = ({ socket }: any) => {
                     )}
                   </div>
                   <div className="results-score-container">
-                    <h1>{roundPlayer2Result}</h1>
+                    <AnimatedCounter
+                      value={roundPlayer2Result}
+                      color="black"
+                      fontSize="40px"
+                      includeDecimals={false}
+                    />
                     <h2>X</h2>
-                    <h1>{roundPlayer1Result}</h1>
+                    <AnimatedCounter
+                      value={roundPlayer1Result}
+                      color="black"
+                      fontSize="40px"
+                      includeDecimals={false}
+                    />
                   </div>
                   <div className="results-card player1">
                     {cardSelectedSent?.cardCode !== undefined && (
@@ -1079,33 +1068,6 @@ const Battle = ({ socket }: any) => {
           </>
         ) : (
           <div className="battle-results-container">
-            {showPack && (
-              <div
-                style={{
-                  height: "100vh",
-                  alignContent: "center",
-                }}
-                id="pack"
-              >
-                <MyIcon className="animate__animated animate__backInDown" />
-              </div>
-            )}
-            {showStoledCard && (
-              <div
-                style={{
-                  height: "100vh",
-                  alignContent: "center",
-                }}
-                id="stoled-card"
-              >
-                <img
-                  src={require(`../../assets/images/${selectedStolenCard?.cardCode}.svg`)}
-                  alt="carta"
-                  className="animate__animated animate__backInDown"
-                />
-              </div>
-            )}
-
             <div className="battle-results-title-container">
               <h1>Resultado da batalha:</h1>
             </div>
@@ -1336,6 +1298,19 @@ const Battle = ({ socket }: any) => {
             )}
           </div>
         </CardsModal>
+        {!isHiddenPackRiveAnimation && (
+          <div className="rive-container">
+            <RiveWrapper artboard="get-pack" imageName="battle-pack" />
+          </div>
+        )}
+        {!isHiddenCardRiveAnimation && (
+          <div className="rive-container">
+            <RiveWrapper
+              artboard="get-pack"
+              imageName={cardSelected?.cardCode}
+            />
+          </div>
+        )}
       </div>
     </BackgroundAnimation>
   );

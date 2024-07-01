@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React, { useState } from "react";
-import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
+import { AnimatedCounter } from "react-animated-counter";
 // import "animate.css";
 import "./styles.css";
 
@@ -45,72 +45,31 @@ import "./styles.css";
 // };
 
 const App: any = () => {
-  const [isHidden, setIsHidden] = useState(false);
-  const onClick = () => {
-    setIsHidden(!isHidden);
+  // Integer state
+  const [counterValue, setCounterValue] = useState(50);
+
+  // Handle random increment/decrement
+  const handleCounterUpdate = (increment: any) => {
+    const delta = (Math.floor(Math.random() * 100) + 1) * 0.99;
+    setCounterValue(increment ? counterValue + delta : counterValue - delta);
   };
 
-  const { rive, RiveComponent } = useRive({
-    src: "/assets/rive/background.riv",
-    artboard: "card-flip",
-    autoplay: true,
-    stateMachines: "card",
-    onLoad: () => {
-      //@ts-ignore
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      console.log("input::", input);
-    },
-    // assetLoader: (asset, bytes) => {
-    //   if (asset.isImage) {
-    //     randomImageAsset(asset, "01");
-    //     return true;
-    //   } else {
-    //     return false;
-    //   }
-    // },
-  });
-  const input = useStateMachineInput(rive, "card");
-
-  // const randomImageAsset = async (asset: any, cardCode: string) => {
-  //   console.log("asset::", asset);
-
-  //   //@ts-ignore
-  //   const imageUrl = imageMap[asset.name];
-
-  //   if (asset.name === "face") {
-  //     const res = await fetch(
-  //       require(`../../assets/images/teste/${cardCode}.png`)
-  //     );
-  //     const image = await decodeImage(new Uint8Array(await res.arrayBuffer()));
-  //     asset.setRenderImage(image);
-  //     // image.unref();
-  //   }
-  //   if (asset.name === "fundo") {
-  //     const res = await fetch(require(`../../assets/images/teste/fundo.png`));
-  //     const image = await decodeImage(new Uint8Array(await res.arrayBuffer()));
-  //     asset.setRenderImage(image);
-  //     // image.unref();
-  //   }
-  // };
-
-  // useStateMachineInput(rive, "card");
-
-  console.log("useStateMachineInput::", input);
-
   return (
-    <>
-      <button className="skin-btn" onClick={onClick}>
-        {isHidden ? "Show" : "Hide"}
-      </button>
-      <div className="container">
-        {/* <div className="rive-wrapper-container"> */}
-        {!isHidden && <RiveComponent />}
-        {/* {!isHidden && <RiveCards cardCode="01" />} */}
-        {/* {!isHidden && <RiveAnimation cardCode="02" />} */}
-        {/* {!isHidden && <RiveComponent key={1}/>} */}
-        {/* </div> */}
+    <div className="App">
+      <h1>react-aniamted-counter demo</h1>
+      <div className="counter-container">
+        <AnimatedCounter
+          value={counterValue}
+          color="white"
+          fontSize="40px"
+          includeDecimals={false}
+        />
+        <div className="button-container">
+          <button onClick={() => setCounterValue(35)}>Decrement</button>
+          <button onClick={() => setCounterValue(60)}>Increment</button>
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 export default App;

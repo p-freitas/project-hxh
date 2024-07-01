@@ -261,12 +261,6 @@ const Lobby = ({ socket }: any) => {
 
         <button onClick={() => handleOpenModal()}>Cartas de batalha</button>
 
-        {watingPlayersMessagem && (
-          <>
-            <p>Aguardando jogadores...</p>
-            <button onClick={cancelMatchMaking}>Cancelar</button>
-          </>
-        )}
         {showPackOpening && userPacks && (
           <PackOpening
             userPacks={userPacks}
